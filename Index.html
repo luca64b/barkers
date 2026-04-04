@@ -13,19 +13,19 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      /* Palette Hochzeit Chantal & Luca – Blautöne + Akzente */
-      --cream:        #F5F4F0;   /* Naturweiß / Creme (Hintergrund) */
-      --sand:         #E2DED8;   /* Abgedunkeltes Creme für Ränder */
-      --primary:      #2874C2;   /* Kornblumenblau / Azurblau (Hauptfarbe) */
-      --secondary:    #F3AD77;   /* Pfirsich / Apricot (warmer Akzent) */
-      --accent:       #DB6933;   /* Terrakotta / Rostorange (starker Kontrast) */
-      --dark:         #194A93;   /* Kobaltblau / Saphirblau (Dunkel-Anker) */
-      --text:         #2A3A50;   /* Tiefes Dunkelblau für Lesetext */
-      --sky:          #66A5ED;   /* Himmelblau / Babyblau (Hell) */
-      --sage:         #9CBBA5;   /* Salbeigrün (bleibt als Natur-Akzent) */
-      --mint:         #D9E5CD;   /* Pastell-Mintgrün (sanfte Flächen) */
-      --magenta:      #A0285A;   /* Magenta / Beerenton (Blumen-Akzent) */
-      --gold:         #F3AD77;   /* Warmton / Pfirsich */
+      /* Palette inspiriert vom Aquarell Bologna: Pastellblau, Salbei, Warm-Beige, Softgold */
+      --cream:        #F2F0EB;   /* Warmes Naturweiß / Creme */
+      --sand:         #E0DDD5;   /* Abgedunkeltes Creme für Ränder */
+      --primary:      #8AABB0;   /* Pastellblau-Grün aus dem Himmel des Aquarells */
+      --secondary:    #B09A7A;   /* Warmes Goldbeige / Terrakotta der Weinberge */
+      --accent:       #8B6F9E;   /* Zartes Lavendel-Mauve als Akzent */
+      --dark:         #3A4A4F;   /* Tiefes Blaugrau (Baumsilhouetten) */
+      --text:         #4A4A48;   /* Dunkelgrau für Lesetext */
+      --sky:          #C8D8E0;   /* Helles Himmelblau aus dem Aquarell */
+      --sage:         #9CBBA5;   /* Salbeigrün der Zypressen */
+      --mint:         #D9E5CD;   /* Pastell-Mintgrün */
+      --magenta:      #A0285A;   /* Magenta / Beerenton */
+      --gold:         #C4A96B;   /* Goldenes Weinberg-Licht */
     }
 
     html { scroll-behavior: smooth; }
@@ -1309,7 +1309,7 @@
     sendBtn.disabled = true;
 
     const apiKey = "AIzaSyDqzCB7WGN0mhWgp82CvJwNrWinhtb7Ktk";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     
     const systemInstruction = `Du bist ein charmanter, hilfreicher und moderner KI-Assistent auf der Hochzeitswebsite von Chantal und Luca. Du beantwortest Fragen der Gäste zur Hochzeit in Bologna. 
     Wichtige Informationen und Regeln:
