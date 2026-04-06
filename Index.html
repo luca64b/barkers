@@ -1,1289 +1,2371 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Bus, ParkingSquare, MapPin, ChevronLeft, ChevronRight,
-  Plus, Minus, ExternalLink, RefreshCw, Heart, Mail,
-  Clock, Utensils, Music, Wine, Sparkles, Map, Hotel,
-  CreditCard, Plane, ArrowLeft, Check, Sun, CloudRain,
-  Cloud, CloudSnow
-} from "lucide-react";
-
-/* ─── Farbpalette als JS-Objekt (für inline styles wo nötig) ─── */
-const C = {
-  cream:    "#F2F0EB",
-  sand:     "#E0DDD5",
-  sandMid:  "#C8C4BA",
-  primary:  "#8AABB0",
-  primaryD: "#6A9098",
-  secondary:"#B09A7A",
-  accent:   "#8B6F9E",
-  dark:     "#3A4A4F",
-  text:     "#4A4A48",
-  muted:    "#7A8A8E",
-  sky:      "#C8D8E0",
-  mint:     "#D9E5CD",
-  gold:     "#C4A96B",
-  blueDeep: "#194A93",
-  blueMid:  "#2874C2",
-};
-
-/* ─── Reusable: Section Header ─── */
-function SectionHeader({ eyebrow, title }) {
-  return (
-    <div className="text-center mb-10">
-      <span
-        className="block text-xs tracking-widest uppercase mb-2"
-        style={{ color: C.primary, letterSpacing: "0.45em" }}
-      >
-        {eyebrow}
-      </span>
-      <h2
-        className="font-light text-4xl mb-4"
-        style={{ fontFamily: "'Cormorant Garamond', serif", color: C.dark, fontSize: "clamp(2rem,4vw,3rem)" }}
-      >
-        {title}
-      </h2>
-      <div className="flex items-center justify-center gap-4">
-        <div className="h-px w-14" style={{ background: C.sandMid }} />
-        <span style={{ color: C.sandMid, fontFamily: "'Cormorant Garamond', serif" }}>✦</span>
-        <div className="h-px w-14" style={{ background: C.sandMid }} />
-      </div>
-    </div>
-  );
-}
-
-/* ─── Reusable: Primary Button ─── */
-function BtnPrimary({ children, onClick, className = "", type = "button" }) {
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      className={`px-10 py-3.5 text-xs tracking-widest uppercase transition-colors duration-200 ${className}`}
-      style={{ background: C.dark, color: C.cream, fontFamily: "'Jost', sans-serif", letterSpacing: "0.35em" }}
-      onMouseEnter={e => (e.currentTarget.style.background = C.primaryD)}
-      onMouseLeave={e => (e.currentTarget.style.background = C.dark)}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* ─── Reusable: Ghost Button ─── */
-function BtnGhost({ children, onClick, type = "button" }) {
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      className="px-6 py-2 text-xs tracking-widest uppercase transition-colors duration-200 border"
-      style={{ borderColor: C.sand, color: C.text, fontFamily: "'Jost', sans-serif", letterSpacing: "0.22em" }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = C.primary; e.currentTarget.style.color = C.primary; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = C.sand; e.currentTarget.style.color = C.text; }}
-    >
-      {children}
-    </button>
-  );
-}
-
-/* ─── GATE: Envelope Intro ─── */
-function EnvelopeGate({ onOpen }) {
-  const [opening, setOpening] = useState(false);
-
-  const handleOpen = () => {
-    if (opening) return;
-    setOpening(true);
-    setTimeout(onOpen, 1600);
-  };
-
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === "Enter" || e.key === " ") handleOpen(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{
-        backgroundImage: 'url("Aquarell Bologna.jpg")',
-        backgroundSize: "cover",
-        backgroundPosition: "center 30%",
-        perspective: "1500px",
-        transition: "opacity 0.8s ease 1s",
-        opacity: opening ? 0 : 1,
-        pointerEvents: opening ? "none" : "auto",
-      }}
-    >
-      {/* Overlay */}
-      <div
-        className="absolute inset-0"
-        style={{ background: "rgba(58,74,79,0.5)", backdropFilter: "blur(2px)" }}
-      />
-
-      {/* Envelope */}
-      <div
-        className="relative z-10"
-        style={{
-          width: "min(90vw, 760px)",
-          height: "min(60vw, 490px)",
-          transformStyle: "preserve-3d",
-          filter: "drop-shadow(0 30px 60px rgba(0,0,0,0.5))",
-          transition: "transform 1.2s cubic-bezier(0.77,0,0.18,1) 0.4s, opacity 0.8s ease 0.6s",
-          transform: opening ? "scale(3.5) translateY(20vh)" : "scale(1)",
-          opacity: opening ? 0 : 1,
-        }}
-      >
-        {/* Back (blue) */}
-        <div className="absolute inset-0" style={{ background: `linear-gradient(135deg,${C.blueMid},${C.blueDeep})` }} />
-
-        {/* Left flap */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to right,#f8f6f2 30%,#e8e4de 100%)", clipPath: "polygon(0 0,51% 51%,0 100%)" }} />
-        {/* Right flap */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to left,#fdfcfa 30%,#e4e0d8 100%)", clipPath: "polygon(100% 0,49% 51%,100% 100%)" }} />
-        {/* Bottom flap */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to top,#fcfaf7 40%,#d8d4cc 100%)", clipPath: "polygon(0 100%,50% 49%,100% 100%)", zIndex: 3 }} />
-
-        {/* Top flap */}
-        <div
-          className="absolute inset-0"
-          style={{
-            transformOrigin: "top",
-            transformStyle: "preserve-3d",
-            transition: "transform 0.8s cubic-bezier(0.4,0,0.2,1)",
-            transform: opening ? "rotateX(170deg)" : "rotateX(0deg)",
-            zIndex: 5,
-            height: "60%",
-          }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{ background: "linear-gradient(to bottom,#fff 40%,#edeae4 100%)", clipPath: "polygon(0 0,100% 0,50% 100%)" }}
-          />
-        </div>
-
-        {/* Wax Seal */}
-        <button
-          onClick={handleOpen}
-          aria-label="Einladung öffnen"
-          className="absolute z-20 flex items-center justify-center rounded-full cursor-pointer transition-transform duration-200"
-          style={{
-            bottom: 0,
-            left: "50%",
-            transform: opening ? "translate(-50%,50%) scale(0)" : "translate(-50%,50%) scale(1)",
-            width: 68, height: 68,
-            background: "radial-gradient(circle at 32% 30%,#e8895a,#c05a28 70%)",
-            boxShadow: "0 6px 20px rgba(0,0,0,0.3),inset 0 0 10px rgba(0,0,0,0.15)",
-            fontFamily: "'Cormorant Garamond',serif",
-            fontSize: "1.7rem",
-            fontStyle: "italic",
-            color: "#fff",
-            transition: "transform 0.3s ease, opacity 0.3s",
-            opacity: opening ? 0 : 1,
-          }}
-          onMouseEnter={e => { if (!opening) e.currentTarget.style.transform = "translate(-50%,50%) scale(1.08)"; }}
-          onMouseLeave={e => { if (!opening) e.currentTarget.style.transform = "translate(-50%,50%) scale(1)"; }}
-        >
-          C&L
-        </button>
-
-        {/* Names on envelope */}
-        <div
-          className="absolute inset-0 z-10 flex flex-col items-center text-center pointer-events-none"
-          style={{ paddingTop: "clamp(20px,6vw,44px)", transition: "opacity 0.4s", opacity: opening ? 0 : 1 }}
-        >
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "clamp(2rem,6vw,3.2rem)", fontStyle: "italic", color: C.dark, textShadow: "0 2px 6px rgba(255,255,255,0.9)" }}>
-            Chantal{" "}
-            <span style={{ fontFamily: "'Jost',sans-serif", fontSize: "clamp(1.2rem,3.5vw,1.8rem)", fontStyle: "normal", opacity: 0.75, margin: "0 8px" }}>
-              &
-            </span>
-            Luca
-          </div>
-          <div className="mt-1 text-xs tracking-widest uppercase" style={{ color: C.primaryD, letterSpacing: "0.3em" }}>
-            29. August 2026
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Countdown ─── */
-function Countdown() {
-  const [time, setTime] = useState({ d: "—", h: "—", m: "—", s: "—" });
-
-  useEffect(() => {
-    const target = new Date("2026-08-29T16:30:00+02:00").getTime();
-    const tick = () => {
-      const diff = target - Date.now();
-      if (diff <= 0) { setTime({ d: "0", h: "00", m: "00", s: "00" }); return; }
-      setTime({
-        d: String(Math.floor(diff / 86400000)),
-        h: String(Math.floor((diff % 86400000) / 3600000)).padStart(2, "0"),
-        m: String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0"),
-        s: String(Math.floor((diff % 60000) / 1000)).padStart(2, "0"),
-      });
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const units = [["d", "Tage"], ["h", "Stunden"], ["m", "Minuten"], ["s", "Sekunden"]];
-  return (
-    <div
-      className="flex gap-8 px-10 py-5 border mt-10"
-      style={{ background: "rgba(242,240,235,0.78)", backdropFilter: "blur(10px)", borderColor: "rgba(138,171,176,0.25)" }}
-    >
-      {units.map(([key, label]) => (
-        <div key={key} className="text-center">
-          <span className="block" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "2.6rem", fontWeight: 300, color: C.dark, lineHeight: 1 }}>
-            {time[key]}
-          </span>
-          <span className="block mt-1 text-xs uppercase tracking-widest" style={{ color: C.primary, fontSize: "0.6rem", letterSpacing: "0.28em" }}>
-            {label}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Photo Gallery ─── */
-const GALLERY_IMAGES = [
-  "FabienneNike.jpg","Fionadomi.jpg","Kathrinkraaz.jpg",
-  "Lillyale.jpg","Lindibiber.jpg","Lucaelena.jpg",
-  "Myrtokevin.jpg","Similuki.jpg","Similuki(1).jpg",
-];
-
-function Gallery() {
-  const [current, setCurrent] = useState(0);
-  const autoRef = useRef(null);
-
-  const goTo = useCallback((i) => {
-    setCurrent(((i % GALLERY_IMAGES.length) + GALLERY_IMAGES.length) % GALLERY_IMAGES.length);
-  }, []);
-
-  const startAuto = useCallback(() => {
-    clearInterval(autoRef.current);
-    autoRef.current = setInterval(() => setCurrent(c => (c + 1) % GALLERY_IMAGES.length), 4500);
-  }, []);
-
-  useEffect(() => { startAuto(); return () => clearInterval(autoRef.current); }, [startAuto]);
-
-  return (
-    <div className="py-16 px-5 text-center border-t" style={{ background: C.cream, borderColor: C.sand }}>
-      <span className="block text-xs uppercase tracking-widest mb-3" style={{ color: C.secondary, letterSpacing: "0.4em" }}>
-        then &amp; now
-      </span>
-      <h2
-        className="mx-auto mb-10 font-light"
-        style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "clamp(1.6rem,4vw,2.5rem)", color: C.dark, lineHeight: 1.3, maxWidth: 600 }}
-      >
-        After all those weddings together as a guest —{" "}
-        <em style={{ color: C.accent }}>it's our turn now.</em>
-      </h2>
-
-      <div
-        className="relative mx-auto overflow-hidden"
-        style={{ maxWidth: 520, boxShadow: "0 16px 60px rgba(58,74,79,0.15)" }}
-        onMouseEnter={() => clearInterval(autoRef.current)}
-        onMouseLeave={startAuto}
-      >
-        <div
-          className="flex"
-          style={{ transform: `translateX(-${current * 100}%)`, transition: "transform 0.55s cubic-bezier(0.65,0,0.35,1)" }}
-        >
-          {GALLERY_IMAGES.map((src, i) => (
-            <div key={i} className="min-w-full flex items-center justify-center" style={{ background: C.sand }}>
-              <img
-                src={src}
-                alt="Chantal & Luca als Hochzeitsgäste"
-                loading="lazy"
-                className="w-full block"
-                style={{ maxHeight: "75vh", objectFit: "contain" }}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Arrows */}
-        {[[-1, <ChevronLeft size={20} />, "left-0"], [1, <ChevronRight size={20} />, "right-0"]].map(([dir, icon, pos]) => (
-          <button
-            key={dir}
-            onClick={() => { goTo(current + dir); startAuto(); }}
-            aria-label={dir === -1 ? "Zurück" : "Weiter"}
-            className={`absolute top-1/2 -translate-y-1/2 ${pos} w-10 h-10 flex items-center justify-center transition-colors duration-200`}
-            style={{ background: "rgba(242,240,235,0.92)", color: C.dark }}
-            onMouseEnter={e => (e.currentTarget.style.background = "#fff")}
-            onMouseLeave={e => (e.currentTarget.style.background = "rgba(242,240,235,0.92)")}
-          >
-            {icon}
-          </button>
-        ))}
-      </div>
-
-      {/* Dots */}
-      <div className="flex justify-center gap-2 mt-5">
-        {GALLERY_IMAGES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => { goTo(i); startAuto(); }}
-            aria-label={`Bild ${i + 1}`}
-            className="rounded-full p-0 border-0 transition-all duration-200"
-            style={{
-              width: 6, height: 6,
-              background: i === current ? C.dark : C.sandMid,
-              transform: i === current ? "scale(1.4)" : "scale(1)",
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─── RSVP ─── */
-const DietOptions = ({ prefix }) => {
-  const opts = [
-    { val: "normal", label: "Keine Einschränkung" },
-    { val: "vegetarisch", label: "Vegetarisch" },
-    { val: "vegan", label: "Vegan" },
-    { val: "glutenfrei", label: "Glutenfrei" },
-    { val: "laktosefrei", label: "Laktosefrei" },
-  ];
-  const [sel, setSel] = useState([]);
-  const toggle = (v) => setSel(s => s.includes(v) ? s.filter(x => x !== v) : [...s, v]);
-  return (
-    <div className="flex flex-wrap gap-2">
-      {opts.map(o => (
-        <button
-          key={o.val}
-          type="button"
-          onClick={() => toggle(o.val)}
-          className="px-4 py-1.5 rounded-full text-xs border transition-all duration-200"
-          style={{
-            borderColor: sel.includes(o.val) ? C.primary : C.sand,
-            background: sel.includes(o.val) ? C.primary : "#fff",
-            color: sel.includes(o.val) ? "#fff" : C.text,
-          }}
-        >
-          {o.label}
-          <input type="hidden" name={`diet_${prefix}`} value={sel.join(",")} />
-        </button>
-      ))}
-    </div>
-  );
-};
-
-function FormField({ label, id, ...props }) {
-  return (
-    <div className="mb-6">
-      <label
-        htmlFor={id}
-        className="block text-xs uppercase tracking-widest mb-2"
-        style={{ color: C.primary, fontSize: "0.65rem", letterSpacing: "0.28em", fontFamily: "'Jost',sans-serif" }}
-      >
-        {label}
-      </label>
-      {props.as === "textarea"
-        ? <textarea id={id} {...props} className="w-full px-3 py-3 border text-sm outline-none transition-colors duration-200" style={{ borderColor: C.sand, background: C.cream, color: C.dark, fontFamily: "'Jost',sans-serif", height: 90, resize: "vertical" }}
-            onFocus={e => (e.target.style.borderColor = C.primary)}
-            onBlur={e => (e.target.style.borderColor = C.sand)}
-          />
-        : <input id={id} {...props} className="w-full px-3 py-3 border text-sm outline-none transition-colors duration-200" style={{ borderColor: C.sand, background: C.cream, color: C.dark, fontFamily: "'Jost',sans-serif" }}
-            onFocus={e => (e.target.style.borderColor = C.primary)}
-            onBlur={e => (e.target.style.borderColor = C.sand)}
-          />
-      }
-    </div>
-  );
-}
-
-function RSVP() {
-  const [step, setStep] = useState("choice"); // choice | yes | no | success | declineSuccess
-  const [isCouple, setIsCouple] = useState(false);
-
-  const handleYesSubmit = (e) => { e.preventDefault(); setStep("success"); };
-  const handleNoSubmit  = (e) => { e.preventDefault(); setStep("declineSuccess"); };
-
-  const cardStyle = { background: "#fff", border: `1px solid ${C.sand}` };
-
-  return (
-    <section style={{ background: `linear-gradient(160deg, #eef3f8 0%, ${C.mint} 100%)` }}>
-      <div className="max-w-3xl mx-auto px-5 py-20">
-        <SectionHeader eyebrow="Anmeldung" title="Seid ihr dabei?" />
-        <p className="text-center mb-10 text-sm leading-relaxed" style={{ color: C.text, maxWidth: 520, margin: "0 auto 40px" }}>
-          Wir freuen uns auf diesen Tag mit euch.<br />
-          Bitte gebt uns bis zum <strong>31. Mai 2026</strong> Bescheid.
-        </p>
-
-        <div className="max-w-lg mx-auto p-8 md:p-12" style={cardStyle}>
-
-          {/* ── CHOICE ── */}
-          {step === "choice" && (
-            <div>
-              <p className="text-center mb-1" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.6rem", fontWeight: 300, color: C.dark }}>Kommt ihr?</p>
-              <p className="text-center text-xs mb-8" style={{ color: C.muted, letterSpacing: "0.12em" }}>29. August 2026 · Tizzano, Bologna</p>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { key: "yes", icon: "🥂", label: "Ja, wir kommen", sub: "Con piacere" },
-                  { key: "no",  icon: "💌", label: "Leider nicht",  sub: "In Gedanken dabei" },
-                ].map(({ key, icon, label, sub }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setStep(key)}
-                    className="border p-8 text-center transition-all duration-200"
-                    style={{ borderColor: C.sand, background: "#fff" }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = C.primary; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = C.sand; }}
-                  >
-                    <span className="text-3xl block mb-3">{icon}</span>
-                    <span className="block text-xs uppercase tracking-widest" style={{ color: C.text, letterSpacing: "0.3em" }}>{label}</span>
-                    <span className="block mt-1" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1rem", fontStyle: "italic", color: key === "yes" ? C.primary : C.muted }}>{sub}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── YES FORM ── */}
-          {step === "yes" && (
-            <form onSubmit={handleYesSubmit}>
-              <div className="flex items-center gap-3 mb-8 pb-5 border-b" style={{ borderColor: C.sand }}>
-                <BtnGhost onClick={() => setStep("choice")}><ArrowLeft size={14} /></BtnGhost>
-                <span className="text-xs uppercase tracking-widest" style={{ color: C.primary, letterSpacing: "0.28em" }}>Details zur Anmeldung</span>
-              </div>
-
-              {/* Allein / Zu zweit */}
-              <div className="flex border mb-8 overflow-hidden" style={{ borderColor: C.sand }}>
-                {[["solo", "Allein"], ["couple", "Zu zweit"]].map(([val, lbl]) => (
-                  <label
-                    key={val}
-                    className="flex-1 text-center py-3 cursor-pointer text-xs uppercase tracking-widest transition-colors duration-200"
-                    style={{
-                      background: (val === "couple") === isCouple ? C.dark : "#fff",
-                      color:      (val === "couple") === isCouple ? C.cream : C.text,
-                      letterSpacing: "0.2em",
-                    }}
-                  >
-                    <input type="radio" name="attendance_type" value={val} className="sr-only" onChange={() => setIsCouple(val === "couple")} defaultChecked={val === "solo"} />
-                    {lbl}
-                  </label>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 gap-x-4">
-                <FormField label="Vorname *" id="first_name" name="first_name" required placeholder="Vorname" />
-                <FormField label="Nachname *" id="last_name"  name="last_name"  required placeholder="Nachname" />
-              </div>
-              <FormField label="E-Mail *" id="email" name="email" type="email" required placeholder="deine@email.com" />
-
-              <div className="mb-6">
-                <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: C.primary, fontSize: "0.65rem", letterSpacing: "0.28em" }}>Ernährung</label>
-                <DietOptions prefix="1" />
-              </div>
-
-              {isCouple && (
-                <div className="border-t pt-4 mt-2 mb-6" style={{ borderColor: C.sand }}>
-                  <p className="mb-5" style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", color: C.primary, fontSize: "0.95rem" }}>Angaben zur Begleitung</p>
-                  <div className="grid grid-cols-2 gap-x-4">
-                    <FormField label="Vorname *" id="partner_first" name="partner_first" required={isCouple} placeholder="Vorname" />
-                    <FormField label="Nachname *" id="partner_last"  name="partner_last"  required={isCouple} placeholder="Nachname" />
-                  </div>
-                  <div className="mb-6">
-                    <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: C.primary, fontSize: "0.65rem", letterSpacing: "0.28em" }}>Ernährung Begleitung</label>
-                    <DietOptions prefix="2" />
-                  </div>
-                </div>
-              )}
-
-              {[
-                { name: "friday",  label: "Freitagabend", text: "Ich / Wir sind am Freitagabend dabei (Details folgen)" },
-                { name: "shuttle", label: "Shuttle",       text: "Ich / Wir möchten den Shuttle ab Piazza Malpighi nutzen" },
-              ].map(({ name, label, text }) => (
-                <div key={name} className="mb-6">
-                  <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: C.primary, fontSize: "0.65rem", letterSpacing: "0.28em" }}>{label}</label>
-                  <label className="flex items-start gap-3 cursor-pointer text-sm" style={{ color: C.text, lineHeight: 1.6 }}>
-                    <input type="checkbox" name={name} value="yes" className="mt-0.5 accent-[#8AABB0]" style={{ width: 17, height: 17, flexShrink: 0 }} />
-                    {text}
-                  </label>
-                </div>
-              ))}
-
-              <FormField as="textarea" label="Nachricht (optional)" id="message" name="message" placeholder="…" />
-
-              <button
-                type="submit"
-                className="w-full py-4 text-xs uppercase tracking-widest transition-colors duration-200 mt-2"
-                style={{ background: C.dark, color: C.cream, letterSpacing: "0.38em", fontFamily: "'Jost',sans-serif" }}
-                onMouseEnter={e => (e.currentTarget.style.background = C.primaryD)}
-                onMouseLeave={e => (e.currentTarget.style.background = C.dark)}
-              >
-                Anmeldung absenden
-              </button>
-            </form>
-          )}
-
-          {/* ── NO FORM ── */}
-          {step === "no" && (
-            <form onSubmit={handleNoSubmit}>
-              <p className="text-center mb-1" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.7rem", fontWeight: 300, color: C.dark }}>Schade, aber verständlich.</p>
-              <p className="text-center text-sm mb-8" style={{ color: C.muted, lineHeight: 1.7 }}>Wir würden uns trotzdem über eine kurze Rückmeldung freuen.</p>
-              <div className="border-t pt-6" style={{ borderColor: C.sand }}>
-                <div className="grid grid-cols-2 gap-x-4">
-                  <FormField label="Vorname *" id="decline_first" name="decline_first" required placeholder="Vorname" />
-                  <FormField label="Nachname *" id="decline_last"  name="decline_last"  required placeholder="Nachname" />
-                </div>
-                <FormField as="textarea" label="Nachricht (optional)" id="decline_message" name="decline_message" placeholder="Wir drücken euch die Daumen …" />
-                <input type="hidden" name="attendance" value="Absage" />
-                <div className="flex gap-3 items-center mt-2">
-                  <BtnGhost onClick={() => setStep("choice")}><ArrowLeft size={14} className="inline mr-1" /> Zurück</BtnGhost>
-                  <button
-                    type="submit"
-                    className="flex-1 py-4 text-xs uppercase tracking-widest transition-colors duration-200"
-                    style={{ background: C.dark, color: C.cream, letterSpacing: "0.38em", fontFamily: "'Jost',sans-serif" }}
-                    onMouseEnter={e => (e.currentTarget.style.background = C.primaryD)}
-                    onMouseLeave={e => (e.currentTarget.style.background = C.dark)}
-                  >
-                    Absage senden
-                  </button>
-                </div>
-              </div>
-            </form>
-          )}
-
-          {/* ── SUCCESS ── */}
-          {step === "success" && (
-            <div className="text-center py-12 px-8">
-              <div className="flex justify-center mb-6">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: C.mint }}>
-                  <Check size={24} style={{ color: C.dark }} />
-                </div>
-              </div>
-              <p className="mb-3" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "2.2rem", fontWeight: 300, color: C.dark }}>Grazie mille.</p>
-              <p className="text-sm" style={{ color: C.primary }}>Wir haben eure Anmeldung erhalten und freuen uns schon sehr.</p>
-            </div>
-          )}
-
-          {/* ── DECLINE SUCCESS ── */}
-          {step === "declineSuccess" && (
-            <div className="text-center py-12 px-8">
-              <div className="flex justify-center mb-6">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: C.sand }}>
-                  <Heart size={22} style={{ color: C.muted }} />
-                </div>
-              </div>
-              <p className="mb-3" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.9rem", fontWeight: 300, color: C.dark }}>Danke für deine Rückmeldung.</p>
-              <p className="text-sm" style={{ color: C.muted, lineHeight: 1.7 }}>Schade, dass es nicht klappt – wir freuen uns, euch bald wiederzusehen.</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── TIMELINE ─── */
-const TIMELINE = [
-  { time: "16:30", title: "Empfang & Welcome Drink", sub: "Willkommen auf Tizzano – mit Prosecco aus eigenem Anbau", icon: Wine },
-  { time: "17:00", title: "Begrüssung & Ansprache", sub: "Im Garten des Weinguts unter dem Blätterdach", icon: Heart },
-  { time: "17:30", title: "Aperitivo & Live-Musik", sub: "Zwei entspannte Stunden mit Musik, Wein und Sommer", icon: Music },
-  { time: "19:30", title: "Einzug zum Abendessen", sub: null, icon: Sparkles },
-  { time: "20:00", title: "Abendessen", sub: "Emilianische Küche · La Compagnia del Tortellino", icon: Utensils },
-  { time: "23:00", title: "Party", sub: "DJ Luigi Giusti · bis 02:00 Uhr", icon: Music },
-];
-
-function Programm() {
-  return (
-    <section style={{ background: C.cream }}>
-      <div className="max-w-3xl mx-auto px-5 py-20">
-        <SectionHeader eyebrow="Der grosse Tag" title="Ablauf" />
-
-        <div>
-          {TIMELINE.map(({ time, title, sub, icon: Icon }, i) => (
-            <div key={i} className="grid gap-x-5 pb-8 last:pb-0" style={{ gridTemplateColumns: "88px 1px 1fr" }}>
-              <div className="text-right pt-0.5 text-xs tracking-wide tabular-nums" style={{ color: C.primary }}>
-                {time}
-              </div>
-              <div className="relative" style={{ background: `linear-gradient(to bottom,${C.primary} 0%,rgba(138,171,176,0.15) 100%)` }}>
-                <div className="absolute top-1 -translate-x-1/2 left-1/2 w-2 h-2 rounded-full" style={{ background: C.primary, border: `2px solid ${C.cream}` }} />
-              </div>
-              <div className="pl-2">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <Icon size={14} style={{ color: C.primary, flexShrink: 0 }} />
-                  <h4 style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color: C.dark }}>{title}</h4>
-                </div>
-                {sub && <p className="text-xs leading-relaxed ml-6" style={{ color: C.muted }}>{sub}</p>}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Shuttle card */}
-        <div className="mt-10 flex gap-8 p-10" style={{ background: C.dark }}>
-          <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center border" style={{ background: "rgba(138,171,176,0.2)", borderColor: "rgba(138,171,176,0.35)" }}>
-            <Bus size={20} style={{ color: C.primary }} />
-          </div>
-          <div>
-            <h3 className="mb-2 font-light" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.4rem", color: C.primary }}>Shuttle-Service</h3>
-            <p className="text-sm leading-relaxed" style={{ color: "rgba(200,216,224,0.85)" }}>
-              Damit ihr den Abend sorglos geniessen könnt, organisieren wir einen Shuttle.<br /><br />
-              <span style={{ color: C.sky }}>Abfahrt</span> · Piazza Malpighi, Bologna, ca. 15:45 Uhr<br />
-              <span style={{ color: C.sky }}>Rückfahrt</span> · nach der Party ab 02:00 Uhr<br /><br />
-              Bitte bei der Anmeldung angeben, ob ihr mitfahren möchtet.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── FRIDAY ─── */
-function Friday() {
-  return (
-    <section style={{ background: `linear-gradient(160deg, ${C.blueDeep} 0%, ${C.blueMid} 100%)` }}>
-      <div className="max-w-3xl mx-auto px-5 py-20">
-        <SectionHeader eyebrow="Der Abend davor" title="Freitagabend" />
-
-        <div
-          className="flex gap-8 p-10"
-          style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderLeft: "3px solid rgba(242,240,235,0.4)" }}
-        >
-          <div className="flex-shrink-0 pt-1">
-            <Wine size={28} style={{ color: "rgba(242,240,235,0.7)" }} />
-          </div>
-          <div>
-            <p className="mb-3 text-xs uppercase tracking-widest" style={{ color: "rgba(242,240,235,0.7)", letterSpacing: "0.28em" }}>Freitag, 28. August 2026</p>
-            <h3 className="mb-2 font-light" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.55rem", color: C.cream }}>Informelles Get-Together</h3>
-            <p className="text-sm leading-relaxed" style={{ color: "rgba(253,250,246,0.88)" }}>
-              Der Abend vor der Hochzeit gehört euch – wir laden alle ein, die bereits angereist sind,
-              zu einem entspannten Beisammensein. Kein Programm, keine Tischordnung – einfach ankommen,
-              Wein trinken und gemeinsam in das Hochzeitswochenende starten.<br /><br />
-              Den genauen Ort und die Uhrzeit geben wir in Kürze bekannt.
-            </p>
-            <span
-              className="inline-block mt-5 px-4 py-1.5 text-xs uppercase tracking-widest"
-              style={{ border: "1px solid rgba(242,240,235,0.3)", color: "rgba(242,240,235,0.7)", letterSpacing: "0.28em" }}
-            >
-              Details folgen
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── HOTELS / ANREISE ─── */
-const HOTELS = [
-  { tier: "Luxus",       tierClass: "luxury",  stars: 5, name: "Cà Palazzo Malvasia", desc: "Elegantes Boutique-Hotel im historischen Palazzo. Exklusive Atmosphäre, individuelle Zimmer.", price: "ab ca. 200 € / Nacht", query: "Ca+Palazzo+Malvasia+Bologna" },
-  { tier: "Luxus",       tierClass: "luxury",  stars: 5, name: "Grand Hotel Majestic", desc: "Eines der renommiertesten Hotels Italiens an der Via Indipendenza. Grandhotel-Eleganz.", price: "ab ca. 250 € / Nacht", query: "Grand+Hotel+Majestic+Bologna" },
-  { tier: "Mittelklasse",tierClass: "mid",     stars: 4, name: "Hotel La Quercia", desc: "Ruhig gelegen, nahe dem Weingut Tizzano. Warmes Ambiente, ideal fürs Hochzeitswochenende.", price: "ab ca. 100 € / Nacht", query: "Hotel+La+Quercia+Bologna" },
-  { tier: "Mittelklasse",tierClass: "mid",     stars: 4, name: "Hotel Calzavecchio", desc: "Klassisches Hotel in direkter Nähe zur Location in Casalecchio di Reno.", price: "ab ca. 90 € / Nacht",  query: "Hotel+Calzavecchio+Casalecchio+di+Reno" },
-  { tier: "Agriturismo", tierClass: "agri",    stars: 4, name: "Rio Verde Agriturismo", desc: "Authentisches Landgut im Grünen. Perfekt für alle, die das Hügel-Flair Emilias geniessen.", price: "ab ca. 80 € / Nacht",  query: "Rio+Verde+Agriturismo+Bologna" },
-  { tier: "Budget",      tierClass: "budget",  stars: 3, name: "ibis Bologna Centro", desc: "Zuverlässige, zentral gelegene Option nah am Shuttle-Treffpunkt.", price: "ab ca. 60 € / Nacht",  query: "ibis+Bologna+Centro" },
-];
-
-const TIER_STYLES = {
-  luxury: { background: "#ede8df", color: "#7a6040" },
-  mid:    { background: C.sky,     color: "#2f4050" },
-  agri:   { background: C.mint,    color: "#3a5a48" },
-  budget: { background: "#dce8ea", color: C.dark },
-};
-
-function Hotels() {
-  return (
-    <section style={{ background: C.cream }}>
-      <div className="max-w-3xl mx-auto px-5 py-20">
-        <SectionHeader eyebrow="Wie komme ich hin?" title="Anreise & Unterkunft" />
-
-        {/* ── 1. Zur Location ── */}
-        <h3 className="mb-5 font-light" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.5rem", color: C.dark }}>
-          Anreise zur Location
-        </h3>
-
-        {/* Shuttle + Parkplatz */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {[
-            { icon: Bus, title: "Shuttle-Service", lines: ["Ab Piazza Malpighi, Bologna.", "Hinfahrt ca. 15:45 Uhr", "Rückfahrt ab 02:00 Uhr", "", "Bitte bei der Anmeldung angeben."] },
-            { icon: ParkingSquare, title: "Parkplatz vor Ort", lines: ["Parkplätze auf dem Weingut.", "", "Via Tizzano 2", "Casalecchio di Reno"] },
-          ].map(({ icon: Icon, title, lines }) => (
-            <div key={title} className="p-6 border text-center" style={{ background: "#fff", borderColor: C.sand }}>
-              <Icon size={24} className="mx-auto mb-3" style={{ color: C.primary }} />
-              <h4 className="mb-3" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color: C.dark }}>{title}</h4>
-              <p className="text-sm leading-relaxed" style={{ color: C.text }}>
-                {lines.map((l, i) => l ? <span key={i}>{l}<br /></span> : <br key={i} />)}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Maps: Shuttle-Treffpunkt + Tizzano */}
-        <div className="grid grid-cols-2 gap-3 mb-14">
-          {[
-            { label: "Shuttle-Treffpunkt", address: "Piazza Malpighi · Bologna", q: "Piazza+Malpighi,+Bologna", embed: "Piazza+Malpighi,+Bologna&z=15" },
-            { label: "Azienda Agricola Tizzano", address: "Via Tizzano 2 · Casalecchio di Reno", q: "Azienda+Agricola+Tizzano+Casalecchio+di+Reno", embed: "Azienda+Agricola+Tizzano,+Via+Tizzano+2,+Casalecchio+di+Reno&z=14" },
-          ].map(({ label, address, q, embed }) => (
-            <div key={label} className="p-5 text-center" style={{ background: C.dark }}>
-              <iframe
-                className="w-full block mb-4"
-                style={{ height: 190, border: "none" }}
-                src={`https://maps.google.com/maps?q=${embed}&ie=UTF8&iwloc=&output=embed`}
-                loading="lazy"
-                aria-label={label}
-              />
-              <h4 className="mb-1" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.05rem", color: C.primary }}>{label}</h4>
-              <p className="text-xs mb-4 leading-snug" style={{ color: "rgba(200,216,224,0.8)" }}>{address}</p>
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${q}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs uppercase tracking-widest transition-colors duration-200"
-                style={{ background: C.primary, color: "#fff", letterSpacing: "0.22em" }}
-                onMouseEnter={e => (e.currentTarget.style.background = C.primaryD)}
-                onMouseLeave={e => (e.currentTarget.style.background = C.primary)}
-              >
-                <Map size={12} /> In Google Maps öffnen
-              </a>
-            </div>
-          ))}
-        </div>
-
-        {/* ── 2. Anreise nach Bologna ── */}
-        <h3 className="mb-5 font-light" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.5rem", color: C.dark }}>
-          Anreise nach Bologna
-        </h3>
-
-        <div className="grid gap-4 mb-6">
-          {/* Auto */}
-          <div className="p-6 border" style={{ background: "#fff", borderColor: C.sand }}>
-            <div className="flex items-start gap-4">
-              <MapPin size={20} style={{ color: C.primary, flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <h4 className="mb-1" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color: C.dark }}>Mit dem Auto</h4>
-                <p className="text-sm leading-relaxed" style={{ color: C.text }}>
-                  Bologna ist über die Autobahn A1 (Milano–Roma) und A14 (Adriaküste) bestens erreichbar.
-                  Das Weingut Tizzano liegt in Casalecchio di Reno, ca. 10 Minuten vom Zentrum – Parkplätze sind direkt vor Ort vorhanden.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Flugzeug */}
-          <div className="p-6 border" style={{ background: "#fff", borderColor: C.sand }}>
-            <div className="flex items-start gap-4">
-              <Plane size={20} style={{ color: C.primary, flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <h4 className="mb-1" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color: C.dark }}>Mit dem Flugzeug</h4>
-                <p className="text-sm leading-relaxed" style={{ color: C.text }}>
-                  Der Flughafen Bologna Marconi (BLQ) liegt nur 8 km vom Stadtzentrum entfernt.
-                  Direktverbindungen gibt es aus vielen europäischen Städten – darunter Zürich, Wien, Frankfurt und London.
-                  Vom Flughafen ins Zentrum: ca. 15 Min. per Taxi oder dem <em>Marconi Express</em> (Direktzug zum Bahnhof Bologna Centrale).
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Zug */}
-          <div className="p-6 border" style={{ background: "#fff", borderColor: C.sand }}>
-            <div className="flex items-start gap-4">
-              <CreditCard size={20} style={{ color: C.primary, flexShrink: 0, marginTop: 2 }} />
-              <div>
-                <h4 className="mb-1" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color: C.dark }}>Mit dem Zug</h4>
-                <p className="text-sm leading-relaxed mb-3" style={{ color: C.text }}>
-                  Bologna Centrale ist ein wichtiger Knotenpunkt im italienischen Hochgeschwindigkeitsnetz und gut aus ganz Europa erreichbar.
-                  Der Bahnhof liegt direkt im Zentrum – ideal in Kombination mit dem Shuttle zur Location.
-                </p>
-                <div className="p-4 border-l-2" style={{ background: "#fffbf5", borderColor: C.secondary }}>
-                  <p className="text-xs leading-relaxed" style={{ color: C.secondary }}>
-                    <strong>Hinweis Direktverbindungen aus der Schweiz:</strong> Aufgrund von Bauarbeiten auf der Strecke ist die Direktverbindung aus der Schweiz nach Bologna derzeit nicht durchgehend gewährleistet. Tickets sind teils nicht buchbar.
-                    Wir beobachten die Lage und geben ein Update, sobald Trenitalia eine definitive Stellungnahme veröffentlicht – es kann sich jederzeit ändern.
-                    Alternativ empfiehlt sich eine Umsteigeverbindung via Mailand.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Location photos */}
-        <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto mb-12 mt-2">
-          {["Tizzano Haus.jpg", "Tizzano Portiko.jpg"].map((src, i) => (
-            <div key={i} className="overflow-hidden" style={{ height: 250 }}>
-              <img src={src} alt="Azienda Agricola Tizzano" className="w-full h-full object-cover block transition-transform duration-500 hover:scale-105" />
-            </div>
-          ))}
-        </div>
-        <p className="text-center mb-3 text-xs" style={{ color: C.muted }}>
-          Mehr über das Weingut:{" "}
-          <a href="https://www.tizzano.it" target="_blank" rel="noreferrer" className="border-b" style={{ color: C.primary, borderColor: "rgba(138,171,176,0.4)" }}>
-            www.tizzano.it <ExternalLink size={10} className="inline" />
-          </a>
-        </p>
-
-        {/* ── 3. Hotelempfehlungen ── */}
-        <h3 className="mt-14 mb-3 font-light" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.5rem", color: C.dark }}>
-          Hotelempfehlungen
-        </h3>
-        <p className="text-sm mb-8 leading-relaxed" style={{ color: C.muted, maxWidth: 500 }}>
-          Für alle, die von weiter anreisen oder das Wochenende verlängern möchten –
-          eine Auswahl an Unterkünften in und um Bologna.
-        </p>
-
-        {/* Hotel grid */}
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))" }}>
-          {HOTELS.map((h) => (
-            <div
-              key={h.name}
-              className="p-6 border transition-shadow duration-200"
-              style={{ background: "#fff", borderColor: C.sand }}
-              onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 6px 28px rgba(58,74,79,0.07)")}
-              onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
-            >
-              <span className="inline-block px-3 py-0.5 text-xs uppercase tracking-widest mb-3" style={{ ...TIER_STYLES[h.tierClass], letterSpacing: "0.22em" }}>
-                {h.tier}
-              </span>
-              <div className="mb-1 text-sm" style={{ color: C.gold }}>{"★".repeat(h.stars)}</div>
-              <h4 className="mb-1" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color: C.dark }}>{h.name}</h4>
-              <p className="text-xs leading-snug mb-3" style={{ color: C.muted }}>{h.desc}</p>
-              <p className="text-xs mb-4" style={{ color: C.secondary }}>{h.price}</p>
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${h.query}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs uppercase tracking-wide border-b transition-colors duration-200"
-                style={{ color: C.primary, borderColor: "rgba(138,171,176,0.35)", letterSpacing: "0.18em" }}
-                onMouseEnter={e => { e.currentTarget.style.color = C.dark; e.currentTarget.style.borderColor = C.dark; }}
-                onMouseLeave={e => { e.currentTarget.style.color = C.primary; e.currentTarget.style.borderColor = "rgba(138,171,176,0.35)"; }}
-              >
-                Auf Maps ansehen <ExternalLink size={11} />
-              </a>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── DRESSCODE ─── */
-const SWATCHES = [
-  { hex: "#194A93", name: "Kobaltblau" },
-  { hex: "#2874C2", name: "Kornblumenblau" },
-  { hex: "#66A5ED", name: "Himmelblau" },
-  { hex: "#F3AD77", name: "Pfirsich" },
-  { hex: "#DB6933", name: "Terrakotta" },
-  { hex: "#9CBBA5", name: "Salbeigrün" },
-  { hex: "#D9E5CD", name: "Pastellmint" },
-  { hex: "#A0285A", name: "Magenta" },
-];
-
-function Dresscode() {
-  return (
-    <section style={{ background: `linear-gradient(160deg,#eef3f8 0%,${C.cream} 60%,${C.mint} 100%)` }}>
-      <div className="max-w-3xl mx-auto px-5 py-20">
-        <SectionHeader eyebrow="Was anziehen?" title="Dresscode" />
-
-        {/* Intro box */}
-        <div className="p-10 text-center mb-8" style={{ background: C.dark }}>
-          <span className="block mb-4" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "clamp(1.5rem,3vw,2rem)", fontStyle: "italic", color: C.sky }}>
-            Festlich · Sommerlich · Leicht
-          </span>
-          <p className="text-sm leading-relaxed mx-auto" style={{ color: "rgba(242,240,235,0.85)", maxWidth: 520 }}>
-            Wir feiern im August unter dem Himmel Bolognàs – bitte kommt festlich gekleidet,
-            aber passt euch dem warmen Sommerabend an. Wohlfühlen und trotzdem elegant –
-            inspiriert euch gerne an unserer Farbpalette.
-          </p>
-        </div>
-
-        {/* Do / Don't */}
-        <div className="grid grid-cols-2 gap-3 mb-10">
-          {[
-            {
-              type: "do",
-              title: "Willkommen",
-              color: C.primary,
-              borderColor: C.primary,
-              items: ["Kleider & Röcke (midi/lang)", "Elegante Hosenanzüge & Jumpsuits", "Leinenhosen & schicke Hemden", "Sommeranzüge, ungekrawattet", "Pastelltöne, Blautöne, Terrakotta", "Leichte Stoffe: Leinen, Seide, Satin"],
-            },
-            {
-              type: "dont",
-              title: "Bitte vermeiden",
-              color: C.accent,
-              borderColor: C.accent,
-              items: ["Jeans jeglicher Art", "Weiss (das bleibt der Braut)", "Rot (das bleibt dem Wein)", "Sneakers & Flip-Flops", "Sehr kurze, sportliche Outfits", "Zu formelles Schwarz – lieber Farbe!"],
-            },
-          ].map(({ title, color, borderColor, items }) => (
-            <div key={title} className="p-6 border" style={{ background: "#fff", borderColor: C.sand, borderTop: `3px solid ${borderColor}` }}>
-              <h4 className="mb-4" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color }}>{title}</h4>
-              <ul className="list-none p-0">
-                {items.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 py-2 text-xs border-b last:border-0 leading-snug" style={{ color: C.text, borderColor: C.sand }}>
-                    <span style={{ color, flexShrink: 0 }}>—</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        {/* Palette */}
-        <p className="text-center mb-1 font-light" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.5rem", color: C.dark }}>Unsere Farbpalette</p>
-        <p className="text-center mb-8 text-xs uppercase tracking-widest" style={{ color: C.primary, letterSpacing: "0.28em" }}>Inspiration für euer Outfit</p>
-        <div className="flex flex-wrap gap-4 justify-center mb-10">
-          {SWATCHES.map(({ hex, name }) => (
-            <div key={hex} className="flex flex-col items-center gap-2">
-              <div className="rounded-full" style={{ width: 56, height: 56, background: hex, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", border: "2px solid #fff" }} />
-              <span className="text-center text-xs uppercase" style={{ color: C.muted, fontSize: "0.6rem", letterSpacing: "0.08em", maxWidth: 68, lineHeight: 1.3 }}>{name}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Notes */}
-        {[
-          { strong: "Abends:", text: "Die Nächte in Bologna können im August warm sein – ein leichter Schal oder Blazer als Reserve ist aber nie verkehrt." },
-          { strong: "Schuh-Tipp:", text: "Wir feiern auf einem Weingut mit Kieswegen und Wiesenflächen. Blockabsätze, Wedges oder flache Sandalen empfehlen sich." },
-        ].map(({ strong, text }) => (
-          <div key={strong} className="p-5 mb-3 text-sm leading-relaxed" style={{ background: "rgba(25,74,147,0.05)", border: "1px solid rgba(25,74,147,0.12)", color: C.text }}>
-            <strong style={{ color: C.blueDeep }}>{strong}</strong> {text}
-          </div>
-        ))}
-
-        {/* Photos */}
-        <div className="grid grid-cols-2 gap-3 mt-10">
-          {["Tizzano Haus.jpg", "Tizzano Portiko.jpg"].map((src, i) => (
-            <div key={i} className="overflow-hidden" style={{ height: 200 }}>
-              <img src={src} alt="Azienda Agricola Tizzano" className="w-full h-full object-cover block transition-transform duration-500 hover:scale-105" />
-            </div>
-          ))}
-        </div>
-        <p className="text-center mt-3 text-xs uppercase tracking-widest" style={{ color: C.sandMid, letterSpacing: "0.18em" }}>
-          Azienda Agricola Tizzano · Casalecchio di Reno
-        </p>
-      </div>
-    </section>
-  );
-}
-
-/* ─── GESCHENKE ─── */
-function Geschenke() {
-  const destinations = [
-    { flag: "🇨🇴", label: "Kolumbien & Patagonien" },
-    { flag: "🇯🇵", label: "Velotrekking Japan" },
-    { flag: "🌏", label: "Südostasien" },
-    { flag: "🇱🇰", label: "Sri Lanka" },
-    { flag: "🦘", label: "Australien & Neuseeland" },
-    { flag: "🇫🇮", label: "Skandinavien & Lappland" },
-  ];
-
-  return (
-    <section style={{ background: C.cream }}>
-      <div className="max-w-3xl mx-auto px-5 py-20">
-        <SectionHeader eyebrow="Unsere Wünsche" title="Geschenke" />
-
-        <p className="text-center text-sm leading-relaxed mb-8 mx-auto" style={{ color: C.text, maxWidth: 520 }}>
-          Unser grösstes Geschenk ist eure Anwesenheit. Da unser Haushalt bereits komplett ist,
-          freuen wir uns über einen Beitrag zu unserer gemeinsamen Bucket List – die Welt wartet auf uns.
-        </p>
-
-        <div className="p-8 mb-6 max-w-lg mx-auto border" style={{ background: "rgba(138,171,176,0.07)", borderColor: C.sand }}>
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <Plane size={18} style={{ color: C.primary }} />
-            <p className="text-center" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.25rem", color: C.dark }}>Unsere Bucket List</p>
-          </div>
-          <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
-            {destinations.map(({ flag, label }) => (
-              <div key={label} className="flex items-center gap-3 py-2 text-sm" style={{ color: C.text }}>
-                <span>{flag}</span> {label}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="p-8 text-center max-w-md mx-auto border" style={{ background: "#fff", borderColor: C.sand }}>
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <CreditCard size={15} style={{ color: C.secondary }} />
-            <p className="text-xs uppercase tracking-widest" style={{ color: C.secondary, letterSpacing: "0.28em" }}>Bankverbindung</p>
-          </div>
-          <p className="mb-3" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", color: C.dark }}>Chantal Kern u/o Luca Barbic</p>
-          <p className="inline-block px-4 py-3 my-2 border" style={{ fontFamily: "'Courier New',monospace", fontSize: "1rem", letterSpacing: "0.14em", color: C.dark, background: C.cream, borderColor: C.sand }}>
-            CH97 0020 6206 6028 0601 D
-          </p>
-          <p className="text-xs mt-3" style={{ color: C.muted }}>
-            Verwendungszweck: <em>Hochzeitsgeschenk Chantal & Luca</em>
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── FAQ ─── */
-const FAQ_ITEMS = [
-  { q: "Gibt es einen Dresscode?", a: 'Ja! Festlich und sommerlich. Alle Details findet ihr im Tab «Dresscode». Kurz gesagt: Pastelltöne, Blautöne und Leinen sind immer richtig. Weiss und Rot bitte weglassen, Jeans ebenfalls.' },
-  { q: "Wie komme ich zum Weingut Tizzano?", a: "Wir organisieren einen Shuttle ab Piazza Malpighi, Bologna. Abfahrt ca. 15:45 Uhr, Rückfahrt ab 02:00 Uhr. Wer mit dem Auto kommt: Via Tizzano 2, Casalecchio di Reno – Parkplätze vorhanden." },
-  { q: "Dürfen Kinder mitgebracht werden?", a: "Unser Fest ist Adults only. Ausnahme: Babys, die noch keine eigene Meinung zum Aperitivo haben, sind herzlich willkommen." },
-  { q: "Wo soll ich übernachten?", a: "Alle Empfehlungen findet ihr im Tab «Anreise». Bitte selbstständig buchen. Tipp: Wer den Shuttle nutzt, schläft am besten zentral in Bologna." },
-  { q: "Wie ist das Wetter im August in Bologna?", a: "Meistens heiss, sonnig und wunderschön. Temperaturen oft 30–36 °C tagsüber, abends angenehmer. Falls es nicht mitspielt – wir haben ein Crystal-Zelt als Plan B." },
-  { q: "Was wünscht ihr euch als Geschenk?", a: "Eure Anwesenheit ist das grösste Geschenk! Details und IBAN findet ihr im Tab «Geschenke»." },
-  { q: "Bis wann muss ich mich anmelden?", a: "Bitte bis zum 31. Mai 2026 anmelden – damit wir Catering, Sitzplan und Shuttle rechtzeitig planen können." },
-  { q: "Gibt es einen Freitagabend-Event?", a: "Ja! Für alle, die am Freitag (28. August) bereits angereist sind, laden wir zu einem lockeren Get-Together ein. Details folgen." },
-  { q: "Worauf soll ich bei den Schuhen achten?", a: "Kieswege und Wiesenflächen! Spitze Pfennigabsätze versinken im Boden. Blockabsätze, Wedges oder flache Sandalen sind die bessere Wahl." },
-  { q: "Wann heiratet ihr standesamtlich?", a: "Das wissen wir selbst noch nicht genau – irgendwann dann, wenn's passt. Der 29. August ist unser Fest mit euch, und das ist das Einzige, was zählt." },
-  { q: "Ich habe noch eine andere Frage …", a: "Kein Problem – schreibt uns direkt per E-Mail oder WhatsApp. Wir melden uns so schnell wie möglich." },
-];
-
-const WEATHER_QUIPS = {
-  hot:  ["Sonnencreme einpacken – ihr seid in Bologna, nicht auf dem Sofa.", "Über 30 Grad: das Weingut Tizzano ist quasi Toskana. Perfekt.", "So heiss, dass selbst der Tortellino schwitzt."],
-  warm: ["Ideal für einen Sommerabend auf dem Weingut.", "Bologna zeigt sich von seiner besten Seite. Der Aperitivo wartet.", "Sommerlich warm – genau richtig für einen unvergesslichen Abend."],
-  mild: ["Angenehm mild – perfektes Hochzeitswetter.", "Nicht zu heiss, nicht zu kühl. Bologna weiss, was es tut.", "Jacket am Abend? Vielleicht. Tanzfloor? Auf jeden Fall."],
-  cool: ["Ein leichter Layer ist nie verkehrt – aber drinnen wird getanzt.", "Kühl und frisch – wie ein guter Prosecco.", "Die Nacht wird kühl, aber der Abend wird heiss."],
-  rain: ["Auch Regen kann romantisch sein – und wir haben Plan B.", "Lorenzo Events hat ein Crystal-Zelt parat. Es wird trotzdem wunderschön.", "Regen bringt Glück. Und wir bringen gute Laune."],
-};
-
-function WeatherOracle() {
-  const [state, setState] = useState("idle"); // idle | loading | loaded | error
-  const [data, setData]   = useState(null);
-
-  const load = async () => {
-    setState("loading");
-    try {
-      const res  = await fetch("https://api.open-meteo.com/v1/forecast?latitude=44.4949&longitude=11.3426&current=temperature_2m,weathercode&timezone=Europe/Rome");
-      const json = await res.json();
-      const temp = Math.round(json.current.temperature_2m);
-      const code = json.current.weathercode;
-      let icon, desc, qKey;
-      if (code === 0)      { icon = "☀️";  desc = "Strahlend sonnig"; }
-      else if (code <= 2)  { icon = "🌤️"; desc = "Teils bewölkt"; }
-      else if (code <= 3)  { icon = "☁️";  desc = "Bewölkt"; }
-      else if (code <= 48) { icon = "🌫️"; desc = "Nebel"; }
-      else if (code <= 67) { icon = "🌧️"; desc = "Regen"; }
-      else if (code <= 77) { icon = "🌨️"; desc = "Schnee"; }
-      else if (code <= 82) { icon = "🌦️"; desc = "Regenschauer"; }
-      else                 { icon = "⛈️";  desc = "Gewitter"; }
-      qKey = code >= 51 ? "rain" : temp >= 32 ? "hot" : temp >= 25 ? "warm" : temp >= 18 ? "mild" : "cool";
-      const quips = WEATHER_QUIPS[qKey];
-      const quip  = quips[Math.floor(Math.random() * quips.length)];
-      setState("loaded");
-      setData({ temp, icon, desc, quip });
-    } catch {
-      setState("error");
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chantal & Luca – 29. August 2026</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* Konsistente Farbpalette */
+      --cream:     #F2F0EB;
+      --sand:      #E0DDD5;
+      --sand-mid:  #C8C4BA;
+      --primary:   #8AABB0;
+      --primary-d: #6A9098;
+      --secondary: #B09A7A;
+      --accent:    #8B6F9E;
+      --dark:      #3A4A4F;
+      --text:      #4A4A48;
+      --text-muted:#7A8A8E;
+      --sky:       #C8D8E0;
+      --sage:      #9CBBA5;
+      --mint:      #D9E5CD;
+      --gold:      #C4A96B;
+      --blue-deep: #194A93;
+      --blue-mid:  #2874C2;
+
+      /* Konsequentes Spacing-System (4px Basis) */
+      --space-1:  4px;
+      --space-2:  8px;
+      --space-3:  12px;
+      --space-4:  16px;
+      --space-5:  20px;
+      --space-6:  24px;
+      --space-8:  32px;
+      --space-10: 40px;
+      --space-12: 48px;
+      --space-16: 64px;
+      --space-20: 80px;
+
+      /* Einheitlicher border-radius */
+      --radius-sm: 3px;
+      --radius-md: 6px;
+      --radius-lg: 12px;
+
+      /* Transitions */
+      --transition: 0.22s ease;
     }
-  };
 
-  return (
-    <div className="max-w-lg mx-auto mb-10 p-8 text-center relative overflow-hidden" style={{ background: C.dark }}>
-      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 75% 20%,rgba(102,165,237,0.15),transparent 60%)" }} />
-      <p className="mb-4 text-xs uppercase tracking-widest relative z-10" style={{ color: C.sky, letterSpacing: "0.38em" }}>Bologna · Aktuelles Wetter</p>
-      <div className="relative z-10">
-        {state === "idle" && <p className="text-sm mb-4" style={{ color: "rgba(242,240,235,0.6)" }}>Wetter auf Abruf bereit.</p>}
-        {state === "loading" && <p className="text-sm animate-pulse mb-4" style={{ color: "rgba(242,240,235,0.55)" }}>Wetter wird geladen …</p>}
-        {state === "error" && <p className="text-sm mb-4" style={{ color: "rgba(242,240,235,0.6)" }}>Bologna ist immer eine Reise wert.</p>}
-        {state === "loaded" && data && (
-          <>
-            <div className="flex items-center justify-center gap-5 mb-3">
-              <span style={{ fontSize: "3rem", lineHeight: 1 }}>{data.icon}</span>
-              <span style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "3.2rem", fontWeight: 300, color: "#fff", lineHeight: 1 }}>
-                {data.temp}<span style={{ fontSize: "1.3rem", opacity: 0.65 }}>°C</span>
-              </span>
-            </div>
-            <p className="text-sm mb-4" style={{ color: "rgba(242,240,235,0.75)" }}>{data.desc} · Bologna, Italia</p>
-            <p className="border-t pt-4" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.1rem", fontStyle: "italic", color: C.sky, lineHeight: 1.55, borderColor: "rgba(255,255,255,0.1)" }}>
-              {data.quip}
-            </p>
-          </>
-        )}
-      </div>
-      <button
-        onClick={load}
-        className="relative z-10 mt-4 px-4 py-1.5 text-xs uppercase tracking-widest flex items-center gap-1.5 mx-auto transition-colors duration-200 border"
-        style={{ background: "none", borderColor: "rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.6)", letterSpacing: "0.22em" }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = C.sky; e.currentTarget.style.color = C.sky; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
-      >
-        <RefreshCw size={12} /> Aktualisieren
-      </button>
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Jost', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* ─── KUVERT INTRO ───────────────────────────────── */
+    #gate-intro {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center 30%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 1500px;
+      transition: opacity 0.8s ease 1s;
+    }
+    #gate-intro::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(58, 74, 79, 0.5);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+    .envelope-wrapper {
+      position: relative;
+      width: 90vw;
+      max-width: 760px;
+      height: 60vw;
+      max-height: 490px;
+      transition: transform 1.2s cubic-bezier(0.77, 0, 0.18, 1) 0.4s, opacity 0.8s ease 0.6s;
+      transform-style: preserve-3d;
+      filter: drop-shadow(0 30px 60px rgba(0,0,0,0.5));
+      z-index: 1;
+    }
+    .env-back {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--blue-mid), var(--blue-deep));
+      border-radius: var(--radius-sm);
+    }
+    .env-left {
+      position: absolute; inset: 0;
+      background: linear-gradient(to right, #f8f6f2 30%, #e8e4de 100%);
+      clip-path: polygon(0 0, 51% 51%, 0 100%);
+      z-index: 2; border-radius: var(--radius-sm);
+    }
+    .env-right {
+      position: absolute; inset: 0;
+      background: linear-gradient(to left, #fdfcfa 30%, #e4e0d8 100%);
+      clip-path: polygon(100% 0, 49% 51%, 100% 100%);
+      z-index: 2; border-radius: var(--radius-sm);
+    }
+    .env-bottom {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, #fcfaf7 40%, #d8d4cc 100%);
+      clip-path: polygon(0 100%, 50% 49%, 100% 100%);
+      z-index: 3; border-radius: var(--radius-sm);
+    }
+    .env-flap-wrapper {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 60%;
+      transform-origin: top;
+      transform-style: preserve-3d;
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 5;
+    }
+    .env-flap {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, #ffffff 40%, #edeae4 100%);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    }
+    .wax-seal {
+      position: absolute;
+      bottom: 0; left: 50%;
+      transform: translate(-50%, 50%);
+      width: 68px; height: 68px;
+      background: radial-gradient(circle at 32% 30%, #e8895a, #c05a28 70%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.7rem;
+      font-style: italic;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 0 10px rgba(0,0,0,0.15);
+      cursor: pointer;
+      z-index: 20;
+      transition: transform var(--transition), box-shadow var(--transition);
+      animation: seal-pulse 2.5s ease-in-out infinite;
+    }
+    .wax-seal:hover {
+      transform: translate(-50%, 50%) scale(1.06);
+    }
+    @keyframes seal-pulse {
+      0%, 100% { box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 0 10px rgba(0,0,0,0.15), 0 0 0 0 rgba(192, 90, 40, 0.5); }
+      50%       { box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 0 10px rgba(0,0,0,0.15), 0 0 0 18px rgba(192, 90, 40, 0); }
+    }
+    .env-content {
+      position: absolute; inset: 0;
+      z-index: 10;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start;
+      text-align: center;
+      padding-top: clamp(20px, 6vw, 44px);
+      transition: opacity 0.4s;
+      pointer-events: none;
+    }
+    .env-names {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-style: italic;
+      color: var(--dark);
+      line-height: 1.1;
+      margin-bottom: 6px;
+      text-shadow: 0 2px 6px rgba(255,255,255,0.9);
+    }
+    .env-names .and {
+      font-family: 'Jost', sans-serif;
+      font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+      font-style: normal;
+      opacity: 0.75;
+      margin: 0 8px;
+    }
+    .env-date {
+      font-size: 0.68rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--primary-d);
+    }
+    /* Gate open states */
+    #gate-intro.open .env-content    { opacity: 0; pointer-events: none; }
+    #gate-intro.open .env-flap-wrapper { transform: rotateX(170deg); }
+    #gate-intro.open .wax-seal       { opacity: 0; }
+    #gate-intro.open .envelope-wrapper { transform: scale(3.5) translateY(20vh); opacity: 0; }
+    #gate-intro.open                 { opacity: 0; pointer-events: none; }
+    #gate-intro.done                 { display: none; }
+
+    /* ─── TAB NAVIGATION ─────────────────────────────── */
+    #tab-nav {
+      position: sticky; top: 0; z-index: 500;
+      background: rgba(242,240,235,0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--sand);
+      display: none;
+    }
+    #tab-nav.visible { display: block; }
+    .tab-list {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 var(--space-4);
+    }
+    .tab-btn {
+      background: none; border: none;
+      padding: 18px var(--space-5);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      transition: color var(--transition);
+      white-space: nowrap;
+    }
+    .tab-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: var(--space-5); right: var(--space-5);
+      height: 1px;
+      background: var(--dark);
+      transform: scaleX(0);
+      transition: transform 0.25s ease;
+    }
+    .tab-btn:hover, .tab-btn.active { color: var(--dark); }
+    .tab-btn.active::after          { transform: scaleX(1); }
+
+    /* ─── TAB PANELS ─────────────────────────────────── */
+    .tab-panel { display: none; animation: fade-up 0.35s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── SECTION SYSTEM ─────────────────────────────── */
+    .section-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: var(--space-20) var(--space-5);
+    }
+    .section-label {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: var(--space-2);
+    }
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 300;
+      text-align: center;
+      color: var(--dark);
+      line-height: 1.15;
+      margin-bottom: var(--space-3);
+    }
+    .section-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-4);
+      margin-bottom: var(--space-10);
+    }
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      width: 60px;
+      height: 1px;
+      background: var(--sand-mid);
+    }
+    .section-divider span {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      color: var(--sand-mid);
+    }
+
+    /* ─── HERO ───────────────────────────────────────── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: var(--space-20) var(--space-5) var(--space-16);
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center 30%;
+      position: relative;
+    }
+    #hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(242,240,235,0.52) 0%,
+        rgba(138,171,176,0.12) 50%,
+        rgba(242,240,235,0.60) 100%
+      );
+    }
+    #hero > * { position: relative; z-index: 1; }
+
+    .hero-eyebrow {
+      font-size: 0.68rem;
+      letter-spacing: 0.45em;
+      text-transform: uppercase;
+      color: var(--dark);
+      margin-bottom: var(--space-6);
+      opacity: 0.8;
+    }
+    .hero-names {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3.8rem, 10vw, 7.5rem);
+      font-weight: 300;
+      line-height: 0.95;
+      color: var(--dark);
+      text-shadow: 0 2px 24px rgba(242,240,235,0.7);
+    }
+    .hero-names em {
+      font-style: italic;
+      color: var(--dark);
+    }
+    .hero-names .amp {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 0.7em;
+      color: var(--primary);
+      display: block;
+      line-height: 1.2;
+    }
+    .hero-meta {
+      margin-top: var(--space-8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .hero-date {
+      font-size: 0.75rem;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--dark);
+      opacity: 0.75;
+    }
+    .hero-location {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.2rem;
+      font-style: italic;
+      color: var(--dark);
+      opacity: 0.85;
+    }
+    .hero-countdown {
+      margin-top: var(--space-10);
+      display: flex;
+      gap: var(--space-8);
+      background: rgba(242,240,235,0.78);
+      backdrop-filter: blur(10px);
+      padding: var(--space-5) var(--space-10);
+      border: 1px solid rgba(138,171,176,0.25);
+    }
+    .count-item { text-align: center; }
+    .count-item .num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.6rem;
+      font-weight: 300;
+      color: var(--dark);
+      line-height: 1;
+      display: block;
+    }
+    .count-item .label {
+      font-size: 0.6rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-top: var(--space-1);
+      display: block;
+    }
+    .hero-cta {
+      margin-top: var(--space-10);
+    }
+    .btn-primary {
+      display: inline-block;
+      padding: 14px 40px;
+      background: var(--dark);
+      color: var(--cream);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .btn-primary:hover { background: var(--primary-d); }
+
+    /* ─── GALLERY ────────────────────────────────────── */
+    #couple-gallery {
+      padding: var(--space-16) var(--space-5) var(--space-12);
+      text-align: center;
+      background: var(--cream);
+      border-top: 1px solid var(--sand);
+    }
+    .gallery-eyebrow {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--secondary);
+      margin-bottom: var(--space-3);
+    }
+    .gallery-headline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.6rem, 4vw, 2.5rem);
+      font-weight: 300;
+      color: var(--dark);
+      line-height: 1.3;
+      margin: 0 auto var(--space-10);
+      max-width: 600px;
+    }
+    .gallery-headline em {
+      color: var(--accent);
+      font-style: italic;
+    }
+    .gallery-track-wrapper {
+      position: relative;
+      max-width: 520px;
+      margin: 0 auto;
+      overflow: hidden;
+      box-shadow: 0 16px 60px rgba(58,74,79,0.15);
+    }
+    .gallery-track {
+      display: flex;
+      transition: transform 0.55s cubic-bezier(0.65,0,0.35,1);
+      will-change: transform;
+    }
+    .gallery-slide {
+      min-width: 100%;
+      background: var(--sand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gallery-slide img {
+      width: 100%;
+      height: auto;
+      max-height: 75vh;
+      object-fit: contain;
+      display: block;
+    }
+    .gallery-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(242,240,235,0.92);
+      border: none;
+      width: 40px; height: 40px;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: var(--dark);
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition);
+      z-index: 2;
+    }
+    .gallery-arrow:hover { background: #fff; }
+    .gallery-prev { left: 0; }
+    .gallery-next { right: 0; }
+    .gallery-dots {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-2);
+      margin-top: var(--space-5);
+    }
+    .gallery-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--sand-mid);
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: background var(--transition), transform var(--transition);
+    }
+    .gallery-dot.active { background: var(--dark); transform: scale(1.4); }
+
+    /* ─── RSVP ───────────────────────────────────────── */
+    #rsvp {
+      background: linear-gradient(160deg, #eef3f8 0%, var(--mint) 100%);
+    }
+    .rsvp-intro {
+      text-align: center;
+      font-size: 0.95rem;
+      line-height: 1.85;
+      max-width: 520px;
+      margin: 0 auto var(--space-10);
+      color: var(--text);
+    }
+    .form-card {
+      background: #fff;
+      border: 1px solid var(--sand);
+      padding: clamp(28px, 5vw, 52px);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    /* RSVP step 1: Yes/No */
+    .rsvp-step.hidden { display: none; }
+    .step1-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 300;
+      color: var(--dark);
+      text-align: center;
+      margin-bottom: var(--space-1);
+    }
+    .step1-sub {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      margin-bottom: var(--space-8);
+    }
+    .attend-choice {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+    }
+    .attend-btn {
+      border: 1px solid var(--sand);
+      background: #fff;
+      padding: var(--space-8) var(--space-5);
+      cursor: pointer;
+      font-family: 'Jost', sans-serif;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      text-align: center;
+    }
+    .attend-btn:hover { border-color: var(--primary); }
+    .attend-btn.yes:hover { box-shadow: 0 4px 20px rgba(138,171,176,0.15); }
+    .attend-icon { font-size: 1.8rem; display: block; margin-bottom: var(--space-3); }
+    .attend-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text);
+      display: block;
+    }
+    .attend-sub {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--primary);
+      display: block;
+      margin-top: var(--space-1);
+    }
+    .attend-btn.no .attend-sub { color: var(--text-muted); }
+
+    /* Decline message */
+    #rsvp-decline-msg { display: none; }
+    #rsvp-decline-msg .decline-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.7rem;
+      font-weight: 300;
+      color: var(--dark);
+      margin-bottom: var(--space-2);
+      text-align: center;
+    }
+    #rsvp-decline-msg .decline-sub {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      text-align: center;
+      margin-bottom: var(--space-8);
+    }
+    #rsvp-decline-msg .decline-form-section {
+      border-top: 1px solid var(--sand);
+      padding-top: var(--space-6);
+      margin-top: var(--space-2);
+    }
+    #decline-success { display: none; text-align: center; padding: var(--space-8) var(--space-6); }
+    #decline-success .decline-heading { margin-bottom: var(--space-3); }
+
+    /* Form step 2 */
+    .form-step2-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-8);
+      padding-bottom: var(--space-5);
+      border-bottom: 1px solid var(--sand);
+    }
+    .form-step2-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--primary);
+    }
+    .rsvp-toggle {
+      display: flex;
+      border: 1px solid var(--sand);
+      overflow: hidden;
+      margin-bottom: var(--space-8);
+    }
+    .rsvp-toggle label {
+      flex: 1;
+      text-align: center;
+      padding: 12px;
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+      color: var(--text);
+    }
+    .rsvp-toggle input[type=radio] { display: none; }
+    .rsvp-toggle input[type=radio]:checked + label {
+      background: var(--dark);
+      color: var(--cream);
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--space-4); }
+    .form-group { margin-bottom: var(--space-6); }
+    .form-group label {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: var(--space-2);
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1px solid var(--sand);
+      background: var(--cream);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.9rem;
+      color: var(--dark);
+      border-radius: var(--radius-sm);
+      transition: border-color var(--transition);
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: var(--primary); }
+    .form-group textarea { height: 90px; resize: vertical; }
+    #partner-fields { display: none; }
+    #partner-fields.visible { display: block; }
+    .partner-section-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.95rem;
+      font-style: italic;
+      color: var(--primary);
+      margin-bottom: var(--space-5);
+      padding-top: var(--space-3);
+      border-top: 1px dashed var(--sand);
+    }
+    .diet-options { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .diet-chip input { display: none; }
+    .diet-chip label {
+      display: inline-block;
+      padding: 7px 15px;
+      border: 1px solid var(--sand);
+      border-radius: 20px;
+      font-size: 0.76rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      color: var(--text);
+    }
+    .diet-chip input:checked + label {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .checkbox-label input[type=checkbox] {
+      width: 17px; height: 17px;
+      accent-color: var(--primary);
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 15px;
+      background: var(--dark);
+      color: var(--cream);
+      border: none;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.38em;
+      text-transform: uppercase;
+      cursor: pointer;
+      margin-top: var(--space-6);
+      transition: background var(--transition);
+    }
+    .btn-submit:hover { background: var(--primary-d); }
+    .btn-back {
+      background: none;
+      border: 1px solid var(--sand);
+      color: var(--text);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      padding: 9px 22px;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .btn-back:hover { border-color: var(--primary); color: var(--primary); }
+    #form-success { display: none; text-align: center; padding: var(--space-12) var(--space-8); }
+    #form-success .success-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem;
+      font-weight: 300;
+      color: var(--dark);
+    }
+    #form-success p { margin-top: var(--space-3); font-size: 0.88rem; color: var(--primary); }
+
+    /* ─── TIMELINE ───────────────────────────────────── */
+    #programm { background: var(--cream); }
+    .timeline { display: grid; gap: 0; }
+    .tl-item {
+      display: grid;
+      grid-template-columns: 88px 1px 1fr;
+      gap: 0 var(--space-5);
+      padding-bottom: var(--space-8);
+    }
+    .tl-item:last-child { padding-bottom: 0; }
+    .tl-time {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      color: var(--primary);
+      text-align: right;
+      padding-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .tl-line {
+      background: linear-gradient(to bottom, var(--primary) 0%, rgba(138,171,176,0.15) 100%);
+      position: relative;
+    }
+    .tl-line::before {
+      content: '';
+      position: absolute;
+      top: 3px; left: 50%;
+      transform: translateX(-50%);
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 2px solid var(--cream);
+    }
+    .tl-body { padding-left: var(--space-2); }
+    .tl-body h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.12rem;
+      font-weight: 400;
+      color: var(--dark);
+    }
+    .tl-body p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+      line-height: 1.5;
+    }
+    .info-card {
+      background: var(--dark);
+      color: var(--cream);
+      padding: var(--space-10) var(--space-10);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-8);
+      margin-top: var(--space-10);
+    }
+    .info-card-icon {
+      flex-shrink: 0;
+      width: 48px; height: 48px;
+      background: rgba(138,171,176,0.2);
+      border: 1px solid rgba(138,171,176,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+    .info-card h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 300;
+      color: var(--primary);
+      margin-bottom: var(--space-2);
+    }
+    .info-card p {
+      font-size: 0.85rem;
+      line-height: 1.75;
+      color: rgba(200,216,224,0.85);
+    }
+    .info-card strong { color: var(--sky); }
+
+    /* ─── FRIDAY ─────────────────────────────────────── */
+    #friday { background: linear-gradient(160deg, var(--blue-deep) 0%, var(--blue-mid) 100%); }
+    #friday .section-label { color: rgba(242,240,235,0.7); }
+    #friday .section-title { color: var(--cream); }
+    #friday .section-divider::before,
+    #friday .section-divider::after { background: rgba(242,240,235,0.25); }
+    #friday .section-divider span { color: rgba(242,240,235,0.35); }
+    .friday-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-left: 3px solid rgba(242,240,235,0.4);
+      padding: var(--space-10) var(--space-10);
+      display: flex;
+      gap: var(--space-8);
+      align-items: flex-start;
+    }
+    .friday-icon { flex-shrink: 0; font-size: 2rem; line-height: 1; padding-top: 4px; }
+    .friday-card h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.55rem;
+      font-weight: 300;
+      color: var(--cream);
+      margin-bottom: var(--space-2);
+    }
+    .friday-card p {
+      font-size: 0.87rem;
+      line-height: 1.8;
+      color: rgba(253,250,246,0.88);
+    }
+    .friday-date-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(242,240,235,0.7);
+      margin-bottom: var(--space-3);
+    }
+    .tag-outline {
+      display: inline-block;
+      margin-top: var(--space-5);
+      padding: 5px 14px;
+      border: 1px solid rgba(242,240,235,0.3);
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: rgba(242,240,235,0.7);
+    }
+
+    /* ─── HOTELS / ANREISE ───────────────────────────── */
+    #hotels { background: var(--cream); }
+    .transport-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      max-width: 640px;
+      margin: 0 auto var(--space-12);
+    }
+    .transport-card {
+      background: #fff;
+      border: 1px solid var(--sand);
+      padding: var(--space-6);
+      text-align: center;
+    }
+    .transport-card .transport-icon { font-size: 1.6rem; margin-bottom: var(--space-3); display: block; }
+    .transport-card h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      color: var(--dark);
+      margin-bottom: var(--space-3);
+    }
+    .transport-card p { font-size: 0.84rem; line-height: 1.7; color: var(--text); }
+
+    .location-photos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      max-width: 760px;
+      margin: 0 auto var(--space-12);
+    }
+    .location-photo {
+      height: 250px;
+      overflow: hidden;
+    }
+    .location-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease;
+    }
+    .location-photo:hover img { transform: scale(1.03); }
+
+    .hotels-intro {
+      text-align: center;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto var(--space-8);
+      line-height: 1.8;
+    }
+    .hotels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: var(--space-3);
+    }
+    .hotel-card {
+      background: #fff;
+      border: 1px solid var(--sand);
+      padding: var(--space-6);
+      transition: box-shadow var(--transition);
+    }
+    .hotel-card:hover { box-shadow: 0 6px 28px rgba(58,74,79,0.07); }
+    .hotel-tier {
+      display: inline-block;
+      padding: 3px 10px;
+      font-size: 0.62rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: var(--space-3);
+      font-weight: 500;
+    }
+    .tier-budget  { background: #dce8ea; color: var(--dark); }
+    .tier-mid     { background: var(--sky); color: #2f4050; }
+    .tier-luxury  { background: #ede8df; color: #7a6040; }
+    .tier-agri    { background: var(--mint); color: #3a5a48; }
+    .hotel-card h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--dark);
+      margin-bottom: var(--space-1);
+    }
+    .hotel-stars { color: var(--gold); font-size: 0.8rem; margin-bottom: var(--space-2); }
+    .hotel-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.55; margin-bottom: var(--space-3); }
+    .hotel-price { font-size: 0.72rem; color: var(--secondary); margin-bottom: var(--space-4); }
+    .hotel-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--primary);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(138,171,176,0.35);
+      padding-bottom: 1px;
+      transition: color var(--transition);
+    }
+    .hotel-link:hover { color: var(--dark); border-color: var(--dark); }
+
+    .maps-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin-top: var(--space-10);
+    }
+    .map-card {
+      background: var(--dark);
+      padding: var(--space-5);
+      text-align: center;
+    }
+    .map-embed {
+      width: 100%;
+      height: 190px;
+      border: none;
+      margin-bottom: var(--space-4);
+      display: block;
+    }
+    .map-card h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      color: var(--primary);
+      margin-bottom: var(--space-2);
+    }
+    .map-card p {
+      font-size: 0.76rem;
+      color: rgba(200,216,224,0.8);
+      margin-bottom: var(--space-4);
+      line-height: 1.55;
+    }
+    .map-btn {
+      display: inline-block;
+      padding: 8px 18px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      transition: background var(--transition);
+    }
+    .map-btn:hover { background: var(--primary-d); }
+    .hotel-note {
+      text-align: center;
+      margin-top: var(--space-6);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .hotel-note a {
+      color: var(--primary);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(138,171,176,0.4);
+    }
+
+    /* ─── DRESSCODE ──────────────────────────────────── */
+    #dresscode { background: linear-gradient(160deg, #eef3f8 0%, var(--cream) 60%, var(--mint) 100%); }
+    .dress-intro {
+      background: var(--dark);
+      color: var(--cream);
+      padding: var(--space-10) var(--space-10);
+      text-align: center;
+      margin-bottom: var(--space-8);
+    }
+    .dress-tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-style: italic;
+      color: var(--sky);
+      display: block;
+      margin-bottom: var(--space-4);
+    }
+    .dress-intro p {
+      font-size: 0.9rem;
+      line-height: 1.85;
+      color: rgba(242,240,235,0.85);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    .dress-rules {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin-bottom: var(--space-10);
+    }
+    .dress-rule-card {
+      background: #fff;
+      border: 1px solid var(--sand);
+      padding: var(--space-6);
+    }
+    .dress-rule-card.do   { border-top: 3px solid var(--primary); }
+    .dress-rule-card.dont { border-top: 3px solid var(--accent); }
+    .dress-rule-card h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      margin-bottom: var(--space-4);
+    }
+    .dress-rule-card.do h4   { color: var(--primary); }
+    .dress-rule-card.dont h4 { color: var(--accent); }
+    .dress-rule-card ul { list-style: none; padding: 0; }
+    .dress-rule-card ul li {
+      font-size: 0.84rem;
+      color: var(--text);
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--sand);
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+    }
+    .dress-rule-card ul li:last-child { border-bottom: none; }
+    .dress-rule-card.do   ul li::before { content: '—'; color: var(--primary); flex-shrink: 0; }
+    .dress-rule-card.dont ul li::before { content: '—'; color: var(--accent); flex-shrink: 0; }
+
+    .palette-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: var(--dark);
+      text-align: center;
+      margin-bottom: var(--space-2);
+    }
+    .palette-sub {
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: var(--space-8);
+    }
+    .swatches {
+      display: flex;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: var(--space-10);
+    }
+    .swatch { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+    .swatch-circle {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border: 2px solid #fff;
+    }
+    .swatch-name {
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 68px;
+      line-height: 1.3;
+    }
+    .dress-note {
+      background: rgba(25,74,147,0.05);
+      border: 1px solid rgba(25,74,147,0.12);
+      padding: var(--space-5) var(--space-6);
+      font-size: 0.87rem;
+      line-height: 1.8;
+      color: var(--text);
+      margin-bottom: var(--space-3);
+    }
+    .dress-note strong { color: var(--blue-deep); }
+    .dress-photos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin-top: var(--space-10);
+    }
+    .dress-photo {
+      height: 200px;
+      overflow: hidden;
+    }
+    .dress-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease;
+    }
+    .dress-photo:hover img { transform: scale(1.03); }
+    .location-caption {
+      text-align: center;
+      font-size: 0.68rem;
+      color: var(--sand-mid);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-top: var(--space-3);
+    }
+
+    /* ─── GESCHENKE ──────────────────────────────────── */
+    #geschenke { background: var(--cream); }
+    .gift-intro {
+      text-align: center;
+      font-size: 0.95rem;
+      line-height: 1.9;
+      color: var(--text);
+      max-width: 520px;
+      margin: 0 auto var(--space-8);
+    }
+    .bucket-list-card {
+      background: rgba(138,171,176,0.07);
+      border: 1px solid var(--sand);
+      padding: var(--space-8);
+      margin-bottom: var(--space-6);
+      max-width: 620px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .bucket-list-heading {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem;
+      font-weight: 400;
+      color: var(--dark);
+      text-align: center;
+      margin-bottom: var(--space-6);
+      letter-spacing: 0.02em;
+    }
+    .bucket-list-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-2) var(--space-6);
+    }
+    .bucket-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: 0.9rem;
+      color: var(--text);
+      padding: var(--space-2) 0;
+    }
+    .iban-card {
+      background: #fff;
+      border: 1px solid var(--sand);
+      padding: var(--space-8);
+      text-align: center;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .iban-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--secondary);
+      margin-bottom: var(--space-2);
+    }
+    .iban-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      color: var(--dark);
+      margin-bottom: var(--space-3);
+    }
+    .iban-number {
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      letter-spacing: 0.14em;
+      color: var(--dark);
+      background: var(--cream);
+      padding: var(--space-3) var(--space-5);
+      display: inline-block;
+      margin: var(--space-2) 0;
+      border: 1px solid var(--sand);
+    }
+    .iban-purpose {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: var(--space-3);
+    }
+
+    /* ─── FAQ ────────────────────────────────────────── */
+    #extras { background: linear-gradient(160deg, #eef3f8 0%, var(--mint) 100%); }
+    .weather-oracle {
+      background: var(--dark);
+      padding: var(--space-8);
+      max-width: 520px;
+      margin: 0 auto var(--space-10);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .weather-oracle::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 75% 20%, rgba(102,165,237,0.15), transparent 60%);
+      pointer-events: none;
+    }
+    .weather-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.38em;
+      text-transform: uppercase;
+      color: var(--sky);
+      margin-bottom: var(--space-4);
+    }
+    .weather-main {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-5);
+      margin-bottom: var(--space-3);
+    }
+    .weather-icon { font-size: 3rem; line-height: 1; }
+    .weather-temp {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3.2rem;
+      font-weight: 300;
+      line-height: 1;
+      color: #fff;
+    }
+    .weather-temp span { font-size: 1.3rem; opacity: 0.65; }
+    .weather-desc { font-size: 0.82rem; color: rgba(242,240,235,0.75); margin-bottom: var(--space-4); }
+    .weather-quip {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--sky);
+      line-height: 1.55;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: var(--space-4);
+    }
+    .weather-loading { opacity: 0.55; font-size: 0.84rem; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+    .weather-refresh {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.6);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      cursor: pointer;
+      margin-top: var(--space-4);
+      transition: all var(--transition);
+    }
+    .weather-refresh:hover { border-color: var(--sky); color: var(--sky); }
+
+    .faq-list {
+      max-width: 660px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .faq-item {
+      background: #fff;
+      border: 1px solid var(--sand);
+      overflow: hidden;
+      transition: box-shadow var(--transition);
+    }
+    .faq-item:hover { box-shadow: 0 4px 20px rgba(58,74,79,0.06); }
+    .faq-item.open { border-color: rgba(138,171,176,0.45); }
+    .faq-q {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-5) var(--space-6);
+      background: none; border: none;
+      cursor: pointer;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.9rem;
+      color: var(--dark);
+      text-align: left;
+      transition: background var(--transition);
+    }
+    .faq-q:hover { background: rgba(138,171,176,0.04); }
+    .faq-item.open .faq-q { background: rgba(138,171,176,0.05); }
+    .faq-icon {
+      flex-shrink: 0;
+      width: 24px; height: 24px;
+      border: 1px solid var(--sand);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--text-muted);
+      transition: transform 0.3s ease, background var(--transition), color var(--transition);
+    }
+    .faq-item.open .faq-icon {
+      transform: rotate(45deg);
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .faq-a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), padding 0.3s ease;
+      font-size: 0.86rem;
+      line-height: 1.85;
+      color: var(--text-muted);
+      padding: 0 var(--space-6);
+    }
+    .faq-item.open .faq-a { max-height: 420px; padding: 0 var(--space-6) var(--space-5); }
+
+    /* ─── FOOTER ─────────────────────────────────────── */
+    footer {
+      background: var(--dark);
+      color: var(--cream);
+      text-align: center;
+      padding: var(--space-16) var(--space-5);
+    }
+    .footer-names {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem;
+      font-weight: 300;
+      color: var(--primary);
+      margin-bottom: var(--space-3);
+    }
+    footer p {
+      font-size: 0.82rem;
+      color: rgba(200,216,224,0.7);
+      letter-spacing: 0.06em;
+    }
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    footer a:hover { color: var(--sky); }
+
+    /* ─── SCROLL ANIMATIONS ──────────────────────────── */
+    .anim {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+
+    /* ─── RESPONSIVE ─────────────────────────────────── */
+    @media (max-width: 620px) {
+      .hero-countdown { gap: var(--space-5); padding: 14px var(--space-5); }
+      .info-card { flex-direction: column; gap: var(--space-4); padding: var(--space-6); }
+      .tl-item { grid-template-columns: 68px 1px 1fr; }
+      .friday-card { flex-direction: column; gap: var(--space-3); padding: var(--space-6); }
+      .maps-row, .transport-grid, .location-photos,
+      .dress-rules, .dress-photos { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .attend-choice { grid-template-columns: 1fr; }
+      .tab-list { justify-content: flex-start; overflow-x: auto; }
+      .tab-list::-webkit-scrollbar { display: none; }
+      .tab-btn { padding: 16px 14px; font-size: 0.62rem; }
+      .dress-intro { padding: var(--space-8) var(--space-6); }
+      .section-inner { padding: var(--space-12) var(--space-5); }
+    }
+  </style>
+
+  <noscript>
+    <style>
+      #gate-intro { display: none !important; }
+      body, html { overflow: auto !important; }
+      #tab-nav { display: block !important; }
+    </style>
+  </noscript>
+</head>
+<body>
+
+<!-- GATE: KUVERT -->
+<div id="gate-intro" role="presentation">
+  <div class="envelope-wrapper">
+    <div class="env-back"></div>
+    <div class="env-left"></div>
+    <div class="env-right"></div>
+    <div class="env-bottom"></div>
+    <div class="env-flap-wrapper">
+      <div class="env-flap"></div>
+      <div class="wax-seal" id="gate-cta" role="button" tabindex="0" aria-label="Einladung öffnen">C&L</div>
     </div>
-  );
-}
+    <div class="env-content">
+      <div class="env-names">Chantal <span class="and">&</span> Luca</div>
+      <div class="env-date">29. August 2026</div>
+    </div>
+  </div>
+</div>
 
-function FAQ() {
-  const [open, setOpen] = useState(null);
-  return (
-    <section style={{ background: `linear-gradient(160deg,#eef3f8 0%,${C.mint} 100%)` }}>
-      <div className="max-w-3xl mx-auto px-5 py-20">
-        <SectionHeader eyebrow="Ihr fragt, wir antworten" title="FAQ" />
-        <WeatherOracle />
-        <div className="max-w-2xl mx-auto flex flex-col gap-2">
-          {FAQ_ITEMS.map(({ q, a }, i) => (
-            <div key={i} className="border overflow-hidden transition-shadow duration-200" style={{ background: "#fff", borderColor: open === i ? "rgba(138,171,176,0.45)" : C.sand }}>
-              <button
-                className="w-full flex justify-between items-center gap-4 px-6 py-5 text-left text-sm transition-colors duration-200"
-                style={{ background: open === i ? "rgba(138,171,176,0.05)" : "none", color: C.dark, fontFamily: "'Jost',sans-serif" }}
-                aria-expanded={open === i}
-                onClick={() => setOpen(open === i ? null : i)}
-              >
-                <span>{q}</span>
-                <span
-                  className="flex-shrink-0 w-6 h-6 border flex items-center justify-center transition-all duration-300"
-                  style={{
-                    borderColor: open === i ? C.primary : C.sand,
-                    background:  open === i ? C.primary : "none",
-                    color:       open === i ? "#fff" : C.muted,
-                    transform:   open === i ? "rotate(45deg)" : "rotate(0deg)",
-                  }}
-                >
-                  <Plus size={14} />
-                </span>
-              </button>
-              <div
-                className="overflow-hidden transition-all duration-300"
-                style={{ maxHeight: open === i ? 400 : 0 }}
-              >
-                <p className="px-6 pb-5 text-sm leading-relaxed" style={{ color: C.muted }}
-                   dangerouslySetInnerHTML={{ __html: a.replace(/<strong>/g, `<strong style="color:${C.dark}">`).replace(/<em>/g, `<em>`) }}
-                />
+<!-- TAB NAVIGATION -->
+<nav id="tab-nav">
+  <div class="tab-list" role="tablist">
+    <button class="tab-btn active" data-tab="tab-home" role="tab">Start</button>
+    <button class="tab-btn" data-tab="programm" role="tab">Programm</button>
+    <button class="tab-btn" data-tab="friday" role="tab">Freitag</button>
+    <button class="tab-btn" data-tab="hotels" role="tab">Anreise</button>
+    <button class="tab-btn" data-tab="dresscode" role="tab">Dresscode</button>
+    <button class="tab-btn" data-tab="geschenke" role="tab">Geschenke</button>
+    <button class="tab-btn" data-tab="rsvp" role="tab">Anmeldung</button>
+    <button class="tab-btn" data-tab="extras" role="tab">FAQ</button>
+  </div>
+</nav>
+
+<main id="main-content">
+
+  <!-- HOME -->
+  <section id="tab-home" class="tab-panel active" role="tabpanel">
+    <div id="hero">
+      <p class="hero-eyebrow">Ihr seid eingeladen</p>
+      <h1 class="hero-names">
+        <em>Chantal</em>
+        <span class="amp">&</span>
+        <em>Luca</em>
+      </h1>
+      <div class="hero-meta">
+        <p class="hero-date">Samstag, 29. August 2026</p>
+        <p class="hero-location">Azienda Agricola Tizzano · Bologna</p>
+      </div>
+      <div class="hero-countdown" id="countdown">
+        <div class="count-item"><span class="num" id="cd-days">—</span><span class="label">Tage</span></div>
+        <div class="count-item"><span class="num" id="cd-hours">—</span><span class="label">Stunden</span></div>
+        <div class="count-item"><span class="num" id="cd-min">—</span><span class="label">Minuten</span></div>
+        <div class="count-item"><span class="num" id="cd-sec">—</span><span class="label">Sekunden</span></div>
+      </div>
+      <div class="hero-cta">
+        <button class="btn-primary" onclick="switchTab('rsvp')">Jetzt anmelden</button>
+      </div>
+    </div>
+
+    <!-- GALLERY -->
+    <div id="couple-gallery">
+      <div>
+        <span class="gallery-eyebrow">then &amp; now</span>
+        <h2 class="gallery-headline">
+          After all those weddings together as a guest —<br>
+          <em>it's our turn now.</em>
+        </h2>
+      </div>
+      <div class="gallery-track-wrapper">
+        <div class="gallery-track" id="galleryTrack">
+          <div class="gallery-slide"><img src="FabienneNike.jpg"   alt="Chantal & Luca als Hochzeitsgäste" loading="lazy"></div>
+          <div class="gallery-slide"><img src="Fionadomi.jpg"      alt="Chantal & Luca als Hochzeitsgäste" loading="lazy"></div>
+          <div class="gallery-slide"><img src="Kathrinkraaz.jpg"   alt="Chantal & Luca als Hochzeitsgäste" loading="lazy"></div>
+          <div class="gallery-slide"><img src="Lillyale.jpg"       alt="Chantal & Luca als Hochzeitsgäste" loading="lazy"></div>
+          <div class="gallery-slide"><img src="Lindibiber.jpg"     alt="Chantal & Luca als Hochzeitsgäste" loading="lazy"></div>
+          <div class="gallery-slide"><img src="Lucaelena.jpg"      alt="Chantal & Luca als Hochzeitsgäste" loading="lazy"></div>
+          <div class="gallery-slide"><img src="Myrtokevin.jpg"     alt="Chantal & Luca als Hochzeitsgäste" loading="lazy"></div>
+          <div class="gallery-slide"><img src="Similuki.jpg"       alt="Chantal & Luca als Hochzeitsgäste" loading="lazy"></div>
+          <div class="gallery-slide"><img src="Similuki(1).jpg"    alt="Chantal & Luca als Hochzeitsgäste" loading="lazy"></div>
+        </div>
+        <button class="gallery-arrow gallery-prev" aria-label="Zurück"  onclick="galleryMove(-1)">&#8249;</button>
+        <button class="gallery-arrow gallery-next" aria-label="Weiter" onclick="galleryMove(1)">&#8250;</button>
+      </div>
+      <div class="gallery-dots" id="galleryDots"></div>
+    </div>
+  </section>
+
+  <!-- RSVP -->
+  <section id="rsvp" class="tab-panel" role="tabpanel">
+    <div class="section-inner">
+      <span class="section-label">Anmeldung</span>
+      <h2 class="section-title">Seid ihr dabei?</h2>
+      <div class="section-divider"><span>✦</span></div>
+
+      <p class="rsvp-intro">
+        Wir freuen uns auf diesen Tag mit euch.<br>
+        Bitte gebt uns bis zum <strong>31. Mai 2026</strong> Bescheid.
+      </p>
+
+      <div class="form-card">
+        <div id="form-success" data-fs-success>
+          <div class="success-heading">Grazie mille.</div>
+          <p>Wir haben eure Anmeldung erhalten und freuen uns schon sehr.</p>
+        </div>
+
+        <!-- Schritt 1 -->
+        <div id="rsvp-step-1" class="rsvp-step">
+          <p class="step1-heading">Kommt ihr?</p>
+          <p class="step1-sub">29. August 2026 · Tizzano, Bologna</p>
+          <div class="attend-choice">
+            <button type="button" class="attend-btn yes" onclick="rsvpChoose('yes')">
+              <span class="attend-icon">🥂</span>
+              <span class="attend-label">Ja, wir kommen</span>
+              <span class="attend-sub">Con piacere</span>
+            </button>
+            <button type="button" class="attend-btn no" onclick="rsvpChoose('no')">
+              <span class="attend-icon">💌</span>
+              <span class="attend-label">Leider nicht</span>
+              <span class="attend-sub">In Gedanken dabei</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Absage -->
+        <div id="rsvp-decline-msg">
+
+          <!-- Erfolg nach Absenden -->
+          <div id="decline-success">
+            <div class="decline-heading">Danke für deine Rückmeldung.</div>
+            <p style="font-size:0.88rem; color:var(--text-muted); line-height:1.7;">
+              Schade, dass es nicht klappt – wir denken trotzdem an euch und freuen uns, euch bald wiederzusehen.
+            </p>
+          </div>
+
+          <!-- Formular -->
+          <div id="decline-form-wrap">
+            <div class="decline-heading">Schade, aber verständlich.</div>
+            <p class="decline-sub">Wir würden uns trotzdem über eine kurze Rückmeldung freuen.</p>
+
+            <form id="rsvp-decline-form" class="decline-form-section">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="decline_first">Vorname *</label>
+                  <input type="text" id="decline_first" name="decline_first" required placeholder="Vorname" data-fs-field>
+                </div>
+                <div class="form-group">
+                  <label for="decline_last">Nachname *</label>
+                  <input type="text" id="decline_last" name="decline_last" required placeholder="Nachname" data-fs-field>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="decline_message">Nachricht (optional)</label>
+                <textarea id="decline_message" name="decline_message" placeholder="Wir drücken euch die Daumen …" data-fs-field></textarea>
+              </div>
+              <input type="hidden" name="attendance" value="Absage">
+              <div style="display: flex; gap: var(--space-3); align-items: center;">
+                <button type="button" class="btn-back" onclick="rsvpChoose('reset')">← Zurück</button>
+                <button type="submit" class="btn-submit" style="margin-top: 0; flex: 1;" data-fs-submit-btn>Absage senden</button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+        <!-- Schritt 2: Formular -->
+        <form id="rsvp-form" class="rsvp-step hidden">
+          <div class="form-step2-header">
+            <button type="button" class="btn-back" onclick="rsvpChoose('reset')">←</button>
+            <span class="form-step2-label">Details zur Anmeldung</span>
+          </div>
+
+          <div class="rsvp-toggle" role="radiogroup">
+            <input type="radio" name="attendance_type" id="att-solo"   value="solo"   checked>
+            <label for="att-solo">Allein</label>
+            <input type="radio" name="attendance_type" id="att-couple" value="couple">
+            <label for="att-couple">Zu zweit</label>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="first_name">Vorname *</label>
+              <input type="text" id="first_name" name="first_name" required placeholder="Vorname" data-fs-field>
+            </div>
+            <div class="form-group">
+              <label for="last_name">Nachname *</label>
+              <input type="text" id="last_name"  name="last_name"  required placeholder="Nachname" data-fs-field>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">E-Mail *</label>
+            <input type="email" id="email" name="email" required placeholder="deine@email.com" data-fs-field>
+          </div>
+
+          <div class="form-group">
+            <label>Ernährung</label>
+            <div class="diet-options">
+              <div class="diet-chip"><input type="checkbox" id="d1-normal" name="diet_1" value="normal"      data-fs-field><label for="d1-normal">Keine Einschränkung</label></div>
+              <div class="diet-chip"><input type="checkbox" id="d1-veg"    name="diet_1" value="vegetarisch" data-fs-field><label for="d1-veg">Vegetarisch</label></div>
+              <div class="diet-chip"><input type="checkbox" id="d1-vegan"  name="diet_1" value="vegan"       data-fs-field><label for="d1-vegan">Vegan</label></div>
+              <div class="diet-chip"><input type="checkbox" id="d1-gluten" name="diet_1" value="glutenfrei"  data-fs-field><label for="d1-gluten">Glutenfrei</label></div>
+              <div class="diet-chip"><input type="checkbox" id="d1-lacto"  name="diet_1" value="laktosefrei" data-fs-field><label for="d1-lacto">Laktosefrei</label></div>
+            </div>
+          </div>
+
+          <div id="partner-fields">
+            <p class="partner-section-label">Angaben zur Begleitung</p>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="partner_first">Vorname <span class="partner-req-star" style="display:none;">*</span></label>
+                <input type="text" id="partner_first" name="partner_first" placeholder="Vorname" data-fs-field>
+              </div>
+              <div class="form-group">
+                <label for="partner_last">Nachname <span class="partner-req-star" style="display:none;">*</span></label>
+                <input type="text" id="partner_last"  name="partner_last"  placeholder="Nachname" data-fs-field>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── TAB NAVIGATION ─── */
-const TABS = [
-  { id: "home",      label: "Start" },
-  { id: "programm",  label: "Programm" },
-  { id: "friday",    label: "Freitag" },
-  { id: "hotels",    label: "Anreise" },
-  { id: "dresscode", label: "Dresscode" },
-  { id: "geschenke", label: "Geschenke" },
-  { id: "rsvp",      label: "Anmeldung" },
-  { id: "faq",       label: "FAQ" },
-];
-
-const TAB_CONTENT = {
-  home:      null, // hero + gallery handled separately
-  programm:  <Programm />,
-  friday:    <Friday />,
-  hotels:    <Hotels />,
-  dresscode: <Dresscode />,
-  geschenke: <Geschenke />,
-  rsvp:      <RSVP />,
-  faq:       <FAQ />,
-};
-
-/* ─── HERO ─── */
-function Hero({ onNavigate }) {
-  return (
-    <div>
-      <div
-        id="hero"
-        className="min-h-screen flex flex-col items-center justify-center text-center relative overflow-hidden"
-        style={{ backgroundImage: 'url("Aquarell Bologna.jpg")', backgroundSize: "cover", backgroundPosition: "center 30%", padding: "80px 20px 64px" }}
-      >
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(242,240,235,0.52) 0%,rgba(138,171,176,0.12) 50%,rgba(242,240,235,0.60) 100%)" }} />
-        <div className="relative z-10 flex flex-col items-center">
-          <p className="mb-6 text-xs uppercase tracking-widest" style={{ color: C.dark, opacity: 0.8, letterSpacing: "0.45em" }}>Ihr seid eingeladen</p>
-          <h1 className="font-light leading-none" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "clamp(3.8rem,10vw,7.5rem)", color: C.dark, textShadow: "0 2px 24px rgba(242,240,235,0.7)" }}>
-            <em>Chantal</em>
-            <span className="block" style={{ fontFamily: "'Cormorant Garamond',serif", fontStyle: "italic", fontSize: "0.7em", color: C.primary, lineHeight: 1.2 }}>&</span>
-            <em>Luca</em>
-          </h1>
-          <div className="flex flex-col items-center gap-2 mt-8">
-            <p className="text-xs uppercase tracking-widest" style={{ color: C.dark, opacity: 0.75, letterSpacing: "0.32em" }}>Samstag, 29. August 2026</p>
-            <p style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "1.2rem", fontStyle: "italic", color: C.dark, opacity: 0.85 }}>Azienda Agricola Tizzano · Bologna</p>
+            <div class="form-group">
+              <label>Ernährung Begleitung</label>
+              <div class="diet-options">
+                <div class="diet-chip"><input type="checkbox" id="d2-normal" name="diet_2" value="normal"      data-fs-field><label for="d2-normal">Keine Einschränkung</label></div>
+                <div class="diet-chip"><input type="checkbox" id="d2-veg"    name="diet_2" value="vegetarisch" data-fs-field><label for="d2-veg">Vegetarisch</label></div>
+                <div class="diet-chip"><input type="checkbox" id="d2-vegan"  name="diet_2" value="vegan"       data-fs-field><label for="d2-vegan">Vegan</label></div>
+                <div class="diet-chip"><input type="checkbox" id="d2-gluten" name="diet_2" value="glutenfrei"  data-fs-field><label for="d2-gluten">Glutenfrei</label></div>
+                <div class="diet-chip"><input type="checkbox" id="d2-lacto"  name="diet_2" value="laktosefrei" data-fs-field><label for="d2-lacto">Laktosefrei</label></div>
+              </div>
+            </div>
           </div>
-          <Countdown />
-          <div className="mt-10">
-            <BtnPrimary onClick={() => onNavigate("rsvp")}>Jetzt anmelden</BtnPrimary>
+
+          <div class="form-group">
+            <label>Freitagabend</label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="friday" value="yes" data-fs-field>
+              Ich / Wir sind am Freitagabend dabei (Details folgen)
+            </label>
           </div>
-        </div>
+
+          <div class="form-group">
+            <label>Shuttle</label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="shuttle" value="yes" data-fs-field>
+              Ich / Wir möchten den Shuttle ab Piazza Malpighi nutzen
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="message">Nachricht (optional)</label>
+            <textarea id="message" name="message" placeholder="…" data-fs-field></textarea>
+          </div>
+
+          <button type="submit" class="btn-submit" data-fs-submit-btn>Anmeldung absenden</button>
+        </form>
       </div>
-      <Gallery />
     </div>
-  );
-}
+  </section>
 
-/* ─── FOOTER ─── */
-function Footer() {
-  return (
-    <footer className="text-center py-16 px-5" style={{ background: C.dark }}>
-      <div className="mb-3 font-light" style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: "2rem", color: C.primary }}>Chantal & Luca</div>
-      <p className="text-sm" style={{ color: "rgba(200,216,224,0.7)", letterSpacing: "0.06em" }}>29. August 2026 · Azienda Agricola Tizzano · Bologna</p>
-      <p className="mt-2.5 text-xs" style={{ color: "rgba(200,216,224,0.5)" }}>
-        <a href="https://www.barkers.ch" style={{ color: C.primary }} onMouseEnter={e => (e.currentTarget.style.color = C.sky)} onMouseLeave={e => (e.currentTarget.style.color = C.primary)}>
-          www.barkers.ch
-        </a>
+  <!-- PROGRAMM -->
+  <section id="programm" class="tab-panel" role="tabpanel">
+    <div class="section-inner">
+      <span class="section-label">Der grosse Tag</span>
+      <h2 class="section-title">Ablauf</h2>
+      <div class="section-divider"><span>✦</span></div>
+
+      <div class="timeline">
+        <div class="tl-item anim">
+          <div class="tl-time">16:30</div>
+          <div class="tl-line"></div>
+          <div class="tl-body">
+            <h4>Empfang & Welcome Drink</h4>
+            <p>Willkommen auf Tizzano – mit Prosecco aus eigenem Anbau</p>
+          </div>
+        </div>
+        <div class="tl-item anim">
+          <div class="tl-time">17:00</div>
+          <div class="tl-line"></div>
+          <div class="tl-body">
+            <h4>Freie Trauung</h4>
+            <p>Im Garten des Weinguts unter dem Blätterdach</p>
+          </div>
+        </div>
+        <div class="tl-item anim">
+          <div class="tl-time">17:30</div>
+          <div class="tl-line"></div>
+          <div class="tl-body">
+            <h4>Aperitivo & Live-Musik</h4>
+            <p>Zwei entspannte Stunden mit Musik, Wein und Sommer</p>
+          </div>
+        </div>
+        <div class="tl-item anim">
+          <div class="tl-time">19:30</div>
+          <div class="tl-line"></div>
+          <div class="tl-body">
+            <h4>Einzug zum Abendessen</h4>
+          </div>
+        </div>
+        <div class="tl-item anim">
+          <div class="tl-time">20:00</div>
+          <div class="tl-line"></div>
+          <div class="tl-body">
+            <h4>Abendessen</h4>
+            <p>Emilianische Küche · La Compagnia del Tortellino</p>
+          </div>
+        </div>
+        <div class="tl-item anim">
+          <div class="tl-time">22:30</div>
+          <div class="tl-line"></div>
+          <div class="tl-body">
+            <h4>Tortenanschnitt</h4>
+            <p>Tiramisù-Hochzeitstorte</p>
+          </div>
+        </div>
+        <div class="tl-item anim">
+          <div class="tl-time">23:00</div>
+          <div class="tl-line"></div>
+          <div class="tl-body">
+            <h4>Party</h4>
+            <p>DJ Luigi Giusti · bis 02:00 Uhr</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card anim">
+        <div class="info-card-icon">🚌</div>
+        <div>
+          <h3>Shuttle-Service</h3>
+          <p>
+            Damit ihr den Abend sorglos geniessen könnt, organisieren wir einen
+            Shuttle zwischen Bologna und dem Weingut.<br><br>
+            <strong>Abfahrt</strong> · Piazza Malpighi, Bologna Zentrum, ca. 15:45 Uhr<br>
+            <strong>Rückfahrt</strong> · nach der Party ab 02:00 Uhr<br><br>
+            Bitte bei der Anmeldung angeben, ob ihr mitfahren möchtet.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FRIDAY -->
+  <section id="friday" class="tab-panel" role="tabpanel">
+    <div class="section-inner">
+      <span class="section-label">Der Abend davor</span>
+      <h2 class="section-title">Freitagabend</h2>
+      <div class="section-divider"><span>✦</span></div>
+
+      <div class="friday-card anim">
+        <div class="friday-icon">🍷</div>
+        <div>
+          <p class="friday-date-label">Freitag, 28. August 2026</p>
+          <h3>Informelles Get-Together</h3>
+          <p>
+            Der Abend vor der Hochzeit gehört euch – wir laden alle ein, die bereits
+            angereist sind, zu einem entspannten Beisammensein. Kein Programm, keine
+            Tischordnung – einfach ankommen, Wein trinken und gemeinsam in das
+            Hochzeitswochenende starten.<br><br>
+            Den genauen Ort und die Uhrzeit geben wir in Kürze bekannt.
+          </p>
+          <span class="tag-outline">Details folgen</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANREISE / HOTELS -->
+  <section id="hotels" class="tab-panel" role="tabpanel">
+    <div class="section-inner">
+      <span class="section-label">Wie komme ich hin?</span>
+      <h2 class="section-title">Anreise & Unterkunft</h2>
+      <div class="section-divider"><span>✦</span></div>
+
+      <div class="transport-grid">
+        <div class="transport-card anim">
+          <span class="transport-icon">🚌</span>
+          <h4>Shuttle-Service</h4>
+          <p>
+            Ab <strong>Piazza Malpighi</strong>, Bologna.<br>
+            Hinfahrt ca. <strong>15:45 Uhr</strong><br>
+            Rückfahrt ab <strong>02:00 Uhr</strong><br><br>
+            Bitte bei der Anmeldung angeben.
+          </p>
+        </div>
+        <div class="transport-card anim">
+          <span class="transport-icon">🅿️</span>
+          <h4>Parkplatz vor Ort</h4>
+          <p>
+            Auf dem Weingut stehen <strong>Parkplätze</strong> zur Verfügung.<br><br>
+            Via Tizzano 2<br>
+            Casalecchio di Reno
+          </p>
+        </div>
+      </div>
+
+      <div class="location-photos">
+        <div class="location-photo anim">
+          <img src="Tizzano Haus.jpg" alt="Villa Tizzano">
+        </div>
+        <div class="location-photo anim">
+          <img src="Tizzano Portiko.jpg" alt="Portikus Tizzano">
+        </div>
+      </div>
+
+      <p class="hotels-intro">
+        Für alle, die von weiter anreisen oder das Wochenende verlängern möchten –
+        eine Auswahl an Unterkünften in allen Preisklassen in und um Bologna.
       </p>
-    </footer>
-  );
-}
 
-/* ─── ROOT APP ─── */
-export default function WeddingApp() {
-  const [gateOpen, setGateOpen]  = useState(false);
-  const [activeTab, setActiveTab] = useState("home");
+      <div class="hotels-grid">
+        <div class="hotel-card anim">
+          <span class="hotel-tier tier-luxury">Luxus</span>
+          <div class="hotel-stars">★★★★★</div>
+          <h4>Cà Palazzo Malvasia</h4>
+          <p class="hotel-desc">Elegantes Boutique-Hotel im historischen Palazzo im Herzen Bolognas. Exklusive Atmosphäre, individuelle Zimmer.</p>
+          <p class="hotel-price">Ab ca. 200 € / Nacht</p>
+          <a class="hotel-link" href="https://www.google.com/maps/search/?api=1&query=Ca+Palazzo+Malvasia+Bologna" target="_blank">Auf Maps ansehen →</a>
+        </div>
+        <div class="hotel-card anim">
+          <span class="hotel-tier tier-luxury">Luxus</span>
+          <div class="hotel-stars">★★★★★</div>
+          <h4>Grand Hotel Majestic</h4>
+          <p class="hotel-desc">Eines der renommiertesten Hotels Italiens, direkt an der Via Indipendenza. Klassische Grandhotel-Eleganz.</p>
+          <p class="hotel-price">Ab ca. 250 € / Nacht</p>
+          <a class="hotel-link" href="https://www.google.com/maps/search/?api=1&query=Grand+Hotel+Majestic+Bologna" target="_blank">Auf Maps ansehen →</a>
+        </div>
+        <div class="hotel-card anim">
+          <span class="hotel-tier tier-mid">Mittelklasse</span>
+          <div class="hotel-stars">★★★★</div>
+          <h4>Hotel La Quercia</h4>
+          <p class="hotel-desc">Ruhig gelegenes Hotel mit warmem Ambiente, nicht weit vom Weingut Tizzano. Ideal für das Hochzeitswochenende.</p>
+          <p class="hotel-price">Ab ca. 100 € / Nacht</p>
+          <a class="hotel-link" href="https://www.google.com/maps/search/?api=1&query=Hotel+La+Quercia+Bologna" target="_blank">Auf Maps ansehen →</a>
+        </div>
+        <div class="hotel-card anim">
+          <span class="hotel-tier tier-mid">Mittelklasse</span>
+          <div class="hotel-stars">★★★★</div>
+          <h4>Hotel Calzavecchio</h4>
+          <p class="hotel-desc">Klassisches Hotel in ruhiger Lage nahe Casalecchio di Reno – in direkter Nähe zur Location.</p>
+          <p class="hotel-price">Ab ca. 90 € / Nacht</p>
+          <a class="hotel-link" href="https://www.google.com/maps/search/?api=1&query=Hotel+Calzavecchio+Casalecchio+di+Reno" target="_blank">Auf Maps ansehen →</a>
+        </div>
+        <div class="hotel-card anim">
+          <span class="hotel-tier tier-agri">Agriturismo</span>
+          <div class="hotel-stars">★★★★</div>
+          <h4>Rio Verde Agriturismo</h4>
+          <p class="hotel-desc">Authentisches Landgut im Grünen mit eigenem Garten. Perfekt für alle, die das Hügel-Flair Emilias geniessen möchten.</p>
+          <p class="hotel-price">Ab ca. 80 € / Nacht</p>
+          <a class="hotel-link" href="https://www.google.com/maps/search/?api=1&query=Rio+Verde+Agriturismo+Bologna" target="_blank">Auf Maps ansehen →</a>
+        </div>
+        <div class="hotel-card anim">
+          <span class="hotel-tier tier-budget">Budget</span>
+          <div class="hotel-stars">★★★</div>
+          <h4>ibis Bologna Centro</h4>
+          <p class="hotel-desc">Zuverlässige, zentral gelegene Option für Gäste, die nah am Shuttle-Treffpunkt übernachten möchten.</p>
+          <p class="hotel-price">Ab ca. 60 € / Nacht</p>
+          <a class="hotel-link" href="https://www.google.com/maps/search/?api=1&query=ibis+Bologna+Centro" target="_blank">Auf Maps ansehen →</a>
+        </div>
+      </div>
 
-  const switchTab = (id) => {
-    setActiveTab(id);
-    window.scrollTo({ top: 0, behavior: "instant" });
-  };
+      <div class="maps-row">
+        <div class="map-card">
+          <iframe class="map-embed" src="https://maps.google.com/maps?q=Piazza+Malpighi,+Bologna&t=&z=15&ie=UTF8&iwloc=&output=embed" loading="lazy" aria-label="Karte Shuttle-Treffpunkt"></iframe>
+          <h4>Shuttle-Treffpunkt</h4>
+          <p>Piazza Malpighi · Bologna</p>
+          <a class="map-btn" href="https://www.google.com/maps/search/?api=1&query=Piazza+Malpighi+Bologna" target="_blank">In Google Maps öffnen</a>
+        </div>
+        <div class="map-card">
+          <iframe class="map-embed" src="https://maps.google.com/maps?q=Azienda+Agricola+Tizzano,+Via+Tizzano+2,+Casalecchio+di+Reno&t=&z=14&ie=UTF8&iwloc=&output=embed" loading="lazy" aria-label="Karte Location"></iframe>
+          <h4>Azienda Agricola Tizzano</h4>
+          <p>Via Tizzano 2 · Casalecchio di Reno</p>
+          <a class="map-btn" href="https://www.google.com/maps/search/?api=1&query=Azienda+Agricola+Tizzano+Casalecchio+di+Reno" target="_blank">In Google Maps öffnen</a>
+        </div>
+      </div>
 
-  return (
-    <div style={{ fontFamily: "'Jost',sans-serif", background: C.cream, color: C.text, overflowX: "hidden" }}>
-      {/* Google Fonts */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@300;400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        :focus-visible { outline: 2px solid #8AABB0; outline-offset: 2px; }
-      `}</style>
-
-      {/* Gate */}
-      {!gateOpen && <EnvelopeGate onOpen={() => setGateOpen(true)} />}
-
-      {/* Sticky Nav */}
-      {gateOpen && (
-        <nav
-          className="sticky top-0 z-40 border-b"
-          style={{ background: "rgba(242,240,235,0.96)", backdropFilter: "blur(16px)", borderColor: C.sand }}
-        >
-          <div className="flex justify-center items-center max-w-4xl mx-auto px-4 overflow-x-auto scrollbar-hide">
-            {TABS.map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => switchTab(id)}
-                className="relative px-5 py-4 text-xs uppercase tracking-widest whitespace-nowrap transition-colors duration-200 border-none bg-transparent cursor-pointer"
-                style={{ color: activeTab === id ? C.dark : C.muted, letterSpacing: "0.3em", fontFamily: "'Jost',sans-serif" }}
-              >
-                {label}
-                <span
-                  className="absolute bottom-0 left-5 right-5 h-px transition-transform duration-200"
-                  style={{ background: C.dark, transform: activeTab === id ? "scaleX(1)" : "scaleX(0)" }}
-                />
-              </button>
-            ))}
-          </div>
-        </nav>
-      )}
-
-      {/* Main content */}
-      {gateOpen && (
-        <main>
-          {activeTab === "home"      && <Hero onNavigate={switchTab} />}
-          {activeTab === "programm"  && <Programm />}
-          {activeTab === "friday"    && <Friday />}
-          {activeTab === "hotels"    && <Hotels />}
-          {activeTab === "dresscode" && <Dresscode />}
-          {activeTab === "geschenke" && <Geschenke />}
-          {activeTab === "rsvp"      && <RSVP />}
-          {activeTab === "faq"       && <FAQ />}
-          <Footer />
-        </main>
-      )}
+      <p class="hotel-note">
+        Mehr über das Weingut: <a href="https://www.tizzano.it" target="_blank">www.tizzano.it →</a>
+      </p>
     </div>
-  );
-}
+  </section>
+
+  <!-- DRESSCODE -->
+  <section id="dresscode" class="tab-panel" role="tabpanel">
+    <div class="section-inner">
+      <span class="section-label">Was anziehen?</span>
+      <h2 class="section-title">Dresscode</h2>
+      <div class="section-divider"><span>✦</span></div>
+
+      <div class="dress-intro anim">
+        <span class="dress-tagline">Festlich · Sommerlich · Leicht</span>
+        <p>
+          Wir feiern im August unter dem Himmel Bolognàs – bitte kommt festlich gekleidet,
+          aber passt euch dem warmen Sommerabend an. Wohlfühlen und trotzdem elegant –
+          inspiriert euch gerne an unserer Farbpalette.
+        </p>
+      </div>
+
+      <div class="dress-rules">
+        <div class="dress-rule-card do anim">
+          <h4>Willkommen</h4>
+          <ul>
+            <li>Kleider & Röcke (midi/lang)</li>
+            <li>Elegante Hosenanzüge & Jumpsuits</li>
+            <li>Leinenhosen & schicke Hemden</li>
+            <li>Sommeranzüge, ungekrawattet</li>
+            <li>Pastelltöne, Blautöne, Terrakotta</li>
+            <li>Leichten Stoffe: Leinen, Seide, Satin</li>
+          </ul>
+        </div>
+        <div class="dress-rule-card dont anim">
+          <h4>Bitte vermeiden</h4>
+          <ul>
+            <li>Jeans jeglicher Art</li>
+            <li>Weiss (das bleibt der Braut)</li>
+            <li>Rot (das bleibt dem Wein)</li>
+            <li>Sneakers & Flip-Flops</li>
+            <li>Sehr kurze, sportliche Outfits</li>
+            <li>Zu formelles Schwarz – lieber Farbe!</li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="palette-heading">Unsere Farbpalette</p>
+      <p class="palette-sub">Inspiration für euer Outfit</p>
+      <div class="swatches">
+        <div class="swatch anim"><div class="swatch-circle" style="background:#194A93;"></div><span class="swatch-name">Kobalt­blau</span></div>
+        <div class="swatch anim"><div class="swatch-circle" style="background:#2874C2;"></div><span class="swatch-name">Kornblumen­blau</span></div>
+        <div class="swatch anim"><div class="swatch-circle" style="background:#66A5ED;"></div><span class="swatch-name">Himmel­blau</span></div>
+        <div class="swatch anim"><div class="swatch-circle" style="background:#F3AD77;"></div><span class="swatch-name">Pfirsich</span></div>
+        <div class="swatch anim"><div class="swatch-circle" style="background:#DB6933;"></div><span class="swatch-name">Terra­kotta</span></div>
+        <div class="swatch anim"><div class="swatch-circle" style="background:#9CBBA5;"></div><span class="swatch-name">Salbei­grün</span></div>
+        <div class="swatch anim"><div class="swatch-circle" style="background:#D9E5CD;"></div><span class="swatch-name">Pastell­mint</span></div>
+        <div class="swatch anim"><div class="swatch-circle" style="background:#A0285A;"></div><span class="swatch-name">Magenta</span></div>
+      </div>
+
+      <div class="dress-note anim">
+        <strong>Abends:</strong> Die Nächte in Bologna können im August warm sein –
+        ein leichter Schal oder ein Blazer als Reserve ist aber nie verkehrt, sobald es auf die Tanzfläche geht.
+      </div>
+      <div class="dress-note anim">
+        <strong>Schuh-Tipp:</strong> Wir feiern auf einem Weingut mit Kieswegen und Wiesenflächen.
+        Sehr spitze Absätze sind keine gute Idee – Blockabsätze, Wedges oder elegante flache Sandalen empfehlen sich.
+      </div>
+
+      <div class="dress-photos">
+        <div class="dress-photo anim">
+          <img src="Tizzano Haus.jpg" alt="Villa Tizzano">
+        </div>
+        <div class="dress-photo anim">
+          <img src="Tizzano Portiko.jpg" alt="Portikus Tizzano">
+        </div>
+      </div>
+      <p class="location-caption">Azienda Agricola Tizzano · Casalecchio di Reno</p>
+    </div>
+  </section>
+
+  <!-- GESCHENKE -->
+  <section id="geschenke" class="tab-panel" role="tabpanel">
+    <div class="section-inner">
+      <span class="section-label">Unsere Wünsche</span>
+      <h2 class="section-title">Geschenke</h2>
+      <div class="section-divider"><span>✦</span></div>
+
+      <p class="gift-intro">
+        Unser grösstes Geschenk ist eure Anwesenheit. Da unser Haushalt bereits komplett ist,
+        freuen wir uns über einen Beitrag zu unserer gemeinsamen Bucket List –
+        die Welt wartet auf uns.
+      </p>
+
+      <div class="bucket-list-card anim">
+        <p class="bucket-list-heading">Unsere Bucket List</p>
+        <div class="bucket-list-grid">
+          <div class="bucket-item">🇨🇴 Kolumbien & Patagonien</div>
+          <div class="bucket-item">🇯🇵 Velotrekking Japan</div>
+          <div class="bucket-item">🌏 Südostasien</div>
+          <div class="bucket-item">🇱🇰 Sri Lanka</div>
+          <div class="bucket-item">🦘 Australien & Neuseeland</div>
+          <div class="bucket-item">🇫🇮 Skandinavien & Lappland</div>
+        </div>
+      </div>
+
+      <div class="iban-card anim">
+        <p class="iban-label">Bankverbindung</p>
+        <p class="iban-name">Chantal Kern u/o Luca Barbic</p>
+        <p class="iban-number">CH97 0020 6206 6028 0601 D</p>
+        <p class="iban-purpose">Verwendungszweck: <em>Hochzeitsgeschenk Chantal & Luca</em></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="extras" class="tab-panel" role="tabpanel">
+    <div class="section-inner">
+      <span class="section-label">Ihr fragt, wir antworten</span>
+      <h2 class="section-title">FAQ</h2>
+      <div class="section-divider"><span>✦</span></div>
+
+      <div class="weather-oracle" id="weather-oracle">
+        <div class="weather-label">Bologna · Aktuelles Wetter</div>
+        <div id="weather-body">
+          <p class="weather-loading">Wetter wird geladen …</p>
+        </div>
+        <button class="weather-refresh" onclick="loadWeather()">↻ Aktualisieren</button>
+      </div>
+
+      <div class="faq-list" id="faq-list">
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Gibt es einen Dresscode?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Ja! Festlich und sommerlich. Alle Details findet ihr im Tab «Dresscode». Kurz gesagt: Pastelltöne, Blautöne und Leinen sind immer richtig. Weiss und Rot bitte weglassen, Jeans ebenfalls.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Wie komme ich zum Weingut Tizzano?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Wir organisieren einen Shuttle ab <strong>Piazza Malpighi</strong>, Bologna. Abfahrt ca. 15:45 Uhr, Rückfahrt nach der Party ab 02:00 Uhr. Bitte bei der Anmeldung angeben.<br><br>
+            Wer mit dem Auto kommt: <em>Via Tizzano 2, Casalecchio di Reno</em> – Parkplätze vorhanden.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Dürfen Kinder mitgebracht werden?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Unser Fest ist <strong>Adults only</strong> – wir möchten, dass alle Gäste (und auch die Eltern!) den Abend voll geniessen können.<br><br>
+            <strong>Ausnahme Babys:</strong> Kleine, die noch keine eigene Meinung zum Aperitivo haben, sind herzlich willkommen.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Wo soll ich übernachten?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Alle Empfehlungen findet ihr im Tab «Anreise» – von Luxus bis Budget. Bitte selbstständig buchen, es gibt keine reservierten Kontingente. Tipp: Wer den Shuttle nutzt, schläft am besten zentral in Bologna.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Wie ist das Wetter im August in Bologna?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Meistens: heiss, sonnig, wunderschön. Temperaturen oft zwischen 30–36 °C tagsüber, abends angenehmer. Sonnencreme ist Pflicht. Falls das Wetter nicht mitspielt – wir haben ein Crystal-Zelt als Plan B.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Was wünscht ihr euch als Geschenk?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Eure Anwesenheit ist das grösste Geschenk! Wer dennoch etwas beitragen möchte: Details und IBAN findet ihr im Tab «Geschenke».
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Bis wann muss ich mich anmelden?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Bitte bis zum <strong>31. Mai 2026</strong> anmelden – damit wir Catering, Sitzplan und Shuttle rechtzeitig planen können.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Gibt es einen Freitagabend-Event?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Ja! Für alle, die am Freitag (28. August) bereits angereist sind, laden wir zu einem lockeren Get-Together ein. Details folgen – schaut im Tab «Freitag» vorbei.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Worauf soll ich bei den Schuhen achten?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Wir feiern auf einem Weingut mit <strong>Kieswegen und Wiesenflächen</strong>. Spitze Pfennigabsätze versinken im Boden. Blockabsätze, Wedges oder flache Sandalen sind die bessere Wahl – Schönheit und Komfort müssen sich nicht ausschliessen.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Wann heiratet ihr standesamtlich?</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Das wissen wir selbst noch nicht genau – irgendwann dann, wenn's passt. Der 29. August ist unser Fest mit euch, und das ist das Einzige, was zählt.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">
+            <span>Ich habe noch eine andere Frage …</span>
+            <span class="faq-icon">+</span>
+          </button>
+          <div class="faq-a">
+            Kein Problem – schreibt uns direkt per E-Mail oder WhatsApp. Wir melden uns so schnell wie möglich.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="footer-names">Chantal & Luca</div>
+  <p>29. August 2026 · Azienda Agricola Tizzano · Bologna</p>
+  <p style="margin-top: 10px;"><a href="https://www.barkers.ch">www.barkers.ch</a></p>
+</footer>
+
+<script>
+  // ── Hintergrundbild ───────────────────────────────
+  document.documentElement.style.setProperty('--bg-image', 'url("Aquarell Bologna.jpg")');
+
+  // ── Wetter ────────────────────────────────────────
+  const weatherQuips = {
+    hot:  ["Sonnencreme einpacken – ihr seid in Bologna, nicht auf dem Sofa.",
+           "Über 30 Grad: das Weingut Tizzano ist quasi Toskana. Perfekt.",
+           "So heiss, dass selbst der Tortellino schwitzt. Leichte Outfits bitte."],
+    warm: ["Ideal für einen Sommerabend auf dem Weingut.",
+           "Bologna zeigt sich von seiner besten Seite. Der Aperitivo wartet.",
+           "Sommerlich warm – genau richtig für einen unvergesslichen Abend."],
+    mild: ["Angenehm mild – perfektes Hochzeitswetter.",
+           "Nicht zu heiss, nicht zu kühl. Bologna weiss, was es tut.",
+           "Jacket am Abend? Vielleicht. Tanzfloor? Auf jeden Fall."],
+    cool: ["Ein leichter Layer ist nie verkehrt – aber drinnen wird getanzt.",
+           "Kühl und frisch – wie ein guter Prosecco.",
+           "Die Nacht wird kühl, aber der Abend wird heiss."],
+    rain: ["Auch Regen kann romantisch sein – und wir haben Plan B.",
+           "Lorenzo Events hat ein Crystal-Zelt parat. Es wird trotzdem wunderschön.",
+           "Regen bringt Glück. Und wir bringen gute Laune."]
+  };
+  async function loadWeather() {
+    const body = document.getElementById('weather-body');
+    body.innerHTML = '<p class="weather-loading">Wetter wird geladen …</p>';
+    try {
+      const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=44.4949&longitude=11.3426&current=temperature_2m,weathercode,windspeed_10m&timezone=Europe/Rome');
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const temp = Math.round(data.current.temperature_2m);
+      const code = data.current.weathercode;
+      let icon, desc, quipKey;
+      if (code === 0)       { icon = '☀️';  desc = 'Strahlend sonnig'; }
+      else if (code <= 2)   { icon = '🌤️'; desc = 'Teils bewölkt'; }
+      else if (code <= 3)   { icon = '☁️';  desc = 'Bewölkt'; }
+      else if (code <= 48)  { icon = '🌫️'; desc = 'Nebel'; }
+      else if (code <= 67)  { icon = '🌧️'; desc = 'Regen'; }
+      else if (code <= 77)  { icon = '🌨️'; desc = 'Schnee'; }
+      else if (code <= 82)  { icon = '🌦️'; desc = 'Regenschauer'; }
+      else                  { icon = '⛈️';  desc = 'Gewitter'; }
+      quipKey = code >= 51 ? 'rain' : temp >= 32 ? 'hot' : temp >= 25 ? 'warm' : temp >= 18 ? 'mild' : 'cool';
+      const quips = weatherQuips[quipKey];
+      const quip  = quips[Math.floor(Math.random() * quips.length)];
+      body.innerHTML = `
+        <div class="weather-main">
+          <span class="weather-icon">${icon}</span>
+          <div class="weather-temp">${temp}<span>°C</span></div>
+        </div>
+        <div class="weather-desc">${desc} · Bologna, Italia</div>
+        <div class="weather-quip">${quip}</div>
+      `;
+    } catch {
+      body.innerHTML = `
+        <div class="weather-main"><span class="weather-icon">🌍</span></div>
+        <div class="weather-desc">Bologna ist immer eine Reise wert.</div>
+        <div class="weather-quip">Im August meistens über 30 °C – Sonnencreme nicht vergessen.</div>
+      `;
+    }
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    if (btn.dataset.tab === 'extras') btn.addEventListener('click', loadWeather);
+  });
+
+  // ── Scroll-Animationen ────────────────────────────
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+        e.target.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.anim').forEach(el => observer.observe(el));
+
+  // ── RSVP Flow ─────────────────────────────────────
+  function rsvpChoose(choice) {
+    document.getElementById('rsvp-step-1').classList.add('hidden');
+    document.getElementById('rsvp-form').classList.add('hidden');
+    document.getElementById('rsvp-decline-msg').style.display = 'none';
+    if (choice === 'yes')   document.getElementById('rsvp-form').classList.remove('hidden');
+    else if (choice === 'no') document.getElementById('rsvp-decline-msg').style.display = 'block';
+    else                    document.getElementById('rsvp-step-1').classList.remove('hidden');
+  }
+
+  // ── Tab Navigation ────────────────────────────────
+  function switchTab(id) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById(id);
+    if (panel) panel.classList.add('active');
+    const btn = document.querySelector(`.tab-btn[data-tab="${id}"]`);
+    if (btn) btn.classList.add('active');
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    if (id === 'extras') loadWeather();
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() { switchTab(this.dataset.tab); });
+  });
+
+  // ── Gate ──────────────────────────────────────────
+  let gateOpened = false;
+  function openGates() {
+    if (gateOpened) return;
+    gateOpened = true;
+    const intro = document.getElementById('gate-intro');
+    intro.classList.add('open');
+    setTimeout(() => {
+      intro.classList.add('done');
+      document.body.style.overflow = '';
+      document.getElementById('tab-nav').classList.add('visible');
+      switchTab('tab-home');
+    }, 1600);
+  }
+  document.body.style.overflow = 'hidden';
+  document.getElementById('gate-cta').addEventListener('click', openGates);
+  document.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && !gateOpened) openGates();
+  });
+
+  // ── Countdown ─────────────────────────────────────
+  function updateCountdown() {
+    const target = new Date('2026-08-29T16:30:00+02:00').getTime();
+    const diff   = target - Date.now();
+    const el     = document.getElementById('countdown');
+    if (!el) return;
+    if (diff <= 0) {
+      el.innerHTML = '<p style="font-family:\'Cormorant Garamond\',serif;font-size:1.4rem;font-style:italic;color:var(--accent);">Oggi è il grande giorno.</p>';
+      return;
+    }
+    document.getElementById('cd-days').textContent  = Math.floor(diff / 86400000);
+    document.getElementById('cd-hours').textContent = String(Math.floor((diff % 86400000) / 3600000)).padStart(2,'0');
+    document.getElementById('cd-min').textContent   = String(Math.floor((diff % 3600000)  / 60000)).padStart(2,'0');
+    document.getElementById('cd-sec').textContent   = String(Math.floor((diff % 60000)    / 1000)).padStart(2,'0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // ── Partner-Felder ────────────────────────────────
+  const partnerFirst = document.getElementById('partner_first');
+  const partnerLast  = document.getElementById('partner_last');
+  document.querySelectorAll('input[name="attendance_type"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isCouple = radio.value === 'couple';
+      document.getElementById('partner-fields').classList.toggle('visible', isCouple);
+      partnerFirst.required = isCouple;
+      partnerLast.required  = isCouple;
+      document.querySelectorAll('.partner-req-star').forEach(s => {
+        s.style.display = isCouple ? 'inline' : 'none';
+      });
+    });
+  });
+
+  // ── Gallery ───────────────────────────────────────
+  (function() {
+    const slides = document.querySelectorAll('.gallery-slide');
+    const track  = document.getElementById('galleryTrack');
+    const dotsEl = document.getElementById('galleryDots');
+    if (!track || !slides.length) return;
+    let current = 0, autoTimer;
+    slides.forEach((_, i) => {
+      const d = document.createElement('button');
+      d.className = 'gallery-dot' + (i === 0 ? ' active' : '');
+      d.setAttribute('aria-label', 'Bild ' + (i + 1));
+      d.addEventListener('click', () => { goTo(i); startAuto(); });
+      dotsEl.appendChild(d);
+    });
+    function goTo(i) {
+      current = ((i % slides.length) + slides.length) % slides.length;
+      track.style.transform = 'translateX(-' + current * 100 + '%)';
+      dotsEl.querySelectorAll('.gallery-dot').forEach((d, j) => d.classList.toggle('active', j === current));
+    }
+    function startAuto() {
+      clearInterval(autoTimer);
+      autoTimer = setInterval(() => goTo(current + 1), 4500);
+    }
+    goTo(0); startAuto();
+    const wrapper = document.querySelector('.gallery-track-wrapper');
+    if (wrapper) {
+      wrapper.addEventListener('mouseenter', () => clearInterval(autoTimer));
+      wrapper.addEventListener('mouseleave', startAuto);
+    }
+    let touchX = 0;
+    track.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+    track.addEventListener('touchend',   e => {
+      const dx = e.changedTouches[0].clientX - touchX;
+      if (Math.abs(dx) > 40) { goTo(current + (dx < 0 ? 1 : -1)); startAuto(); }
+    });
+    window.galleryMove = function(dir) { goTo(current + dir); startAuto(); };
+  })();
+
+  // ── FAQ Accordion ─────────────────────────────────
+  document.querySelectorAll('.faq-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item   = btn.closest('.faq-item');
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => {
+        i.classList.remove('open');
+        i.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
+      });
+      if (!isOpen) {
+        item.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  });
+</script>
+
+<script>
+  window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
+  formspree('initForm', { formElement: '#rsvp-form',         formId: 'xwvwrvae' });
+  formspree('initForm', { formElement: '#rsvp-decline-form', formId: 'xwvwrvae' });
+
+  // Absage-Formular Erfolg: Formular ausblenden, Danke-Message zeigen
+  document.getElementById('rsvp-decline-form')?.addEventListener('formspree:success', function() {
+    document.getElementById('decline-form-wrap').style.display = 'none';
+    document.getElementById('decline-success').style.display   = 'block';
+  });
+</script>
+<script src="https://unpkg.com/@formspree/ajax@1" defer></script>
+
+</body>
+</html>
